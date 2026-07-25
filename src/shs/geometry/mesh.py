@@ -1,20 +1,19 @@
 """
 SHS Mesh Module
 
-Creates numerical grids from physical geometries.
+Converts physical geometry into numerical grids.
 """
 
 from dataclasses import dataclass
 import numpy as np
 
+
 from .geometry import RectangularFilm
+
 
 
 @dataclass
 class Mesh:
-    """
-    Numerical representation of geometry.
-    """
 
     x: np.ndarray
     y: np.ndarray
@@ -22,23 +21,12 @@ class Mesh:
     nx: int
     ny: int
 
+    dx: float
+    dy: float
 
-def create_mesh(
-    geometry: RectangularFilm
-) -> Mesh:
-    """
-    Generate a Cartesian mesh.
 
-    Parameters
-    ----------
-    geometry:
-        Physical geometry object.
 
-    Returns
-    -------
-    Mesh
-        Numerical grid.
-    """
+def create_mesh(geometry):
 
     x = np.linspace(
         0,
@@ -56,6 +44,10 @@ def create_mesh(
     return Mesh(
         x=x,
         y=y,
+
         nx=geometry.nx,
-        ny=geometry.ny
+        ny=geometry.ny,
+
+        dx=geometry.dx,
+        dy=geometry.dy
     )
