@@ -1,0 +1,18 @@
+{
+    "name": "NbN hotspot test",
+
+    "geometry": "NbN_film.json",
+    "material": "NbN.json",
+
+    "temperature": 3.0,
+
+    "current": {
+        "value": 0.001,
+        "units": "A"
+    },
+
+    "time": {
+        "duration": 1e-6,
+        "dt": 1e-9
+    }
+}

@@ -48,6 +48,6 @@ def create_mesh(geometry):
         nx=geometry.nx,
         ny=geometry.ny,
 
-        dx=geometry.dx,
-        dy=geometry.dy
+        dx=geometry.nx,
+        dy=geometry.ny
     )
