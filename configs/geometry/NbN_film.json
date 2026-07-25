@@ -1,0 +1,11 @@
+{
+    "type": "rectangle",
+    "name": "NbN_test_film",
+
+    "width": 5e-6,
+    "height": 5e-6,
+    "thickness": 100e-9,
+
+    "nx": 100,
+    "ny": 100
+}

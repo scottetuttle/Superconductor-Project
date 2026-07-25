@@ -1,0 +1,11 @@
+
+{
+    "name": "NbN",
+    "Tc": 15.5,
+    "coherence_length": 5e-9,
+    "penetration_depth": 2e-7,
+    "thermal_conductivity": 10,
+    "heat_capacity": 2000000,
+    "normal_resistivity": 1e-6,
+    "thickness": 1e-7
+}
