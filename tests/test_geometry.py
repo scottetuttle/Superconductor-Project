@@ -1,11 +1,11 @@
 from shs.geometry import load_geometry, create_mesh
 
 
-def test_geometry_region():
+def test_geometry_contacts():
 
     geometry = load_geometry(
         "configs/geometry/NbN_film.json"
     )
 
-    assert geometry.regions[0].name == "NbN film"
-    assert geometry.regions[0].material == "NbN"
+    assert geometry.contacts[0].name == "left_current"
+    assert geometry.contacts[0].contact_type == "current"

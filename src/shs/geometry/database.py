@@ -8,6 +8,7 @@ import json
 from pathlib import Path
 from .regions import Region
 from .geometry import RectangularFilm
+from .contacts import Contact
 
 
 def load_geometry(filepath: str | Path):
@@ -34,6 +35,13 @@ def load_geometry(filepath: str | Path):
             Region(**region)
             for region in data["regions"]
     ]
+    if "contacts" in data:
+
+        data["contacts"] = [
+            Contact(**contact)
+            for contact in data["contacts"]
+    ]
+        
     geometry_type = data.pop("type")
 
 

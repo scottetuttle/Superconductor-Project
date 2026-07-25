@@ -16,5 +16,17 @@
             "region_type": "superconductor",
             "material": "NbN"
         }
-    ]
+    ],
+    "contacts": [
+    {
+        "name": "left_current",
+        "contact_type": "current",
+        "location": "left_edge"
+    },
+    {
+        "name": "right_current",
+        "contact_type": "current",
+        "location": "right_edge"
+    }
+]
 }

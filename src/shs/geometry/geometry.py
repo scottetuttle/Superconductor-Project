@@ -17,6 +17,7 @@ Future:
 from dataclasses import dataclass
 from typing import List
 from .regions import Region
+from .contacts import Contact
 
 
 @dataclass
@@ -31,7 +32,8 @@ class RectangularFilm:
     nx: int
     ny: int
 
-    regions: list[Region] = None
+    regions: list[Region] | None = None
+    contacts: list[Contact] | None = None
 
 
 
