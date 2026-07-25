@@ -27,6 +27,8 @@ class Fields:
 
     current_density_y: np.ndarray
 
+    heat_source: np.ndarray
+
 
     @classmethod
     def create(cls, mesh: Mesh, initial_temperature: float):
@@ -57,5 +59,7 @@ class Fields:
 
             current_density_x=np.zeros(shape),
 
-            current_density_y=np.zeros(shape)
+            current_density_y=np.zeros(shape),
+
+            heat_source=np.zeros(shape)
         )

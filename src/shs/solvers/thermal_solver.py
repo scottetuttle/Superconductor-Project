@@ -11,62 +11,58 @@ import numpy as np
 
 from shs.physics import ThermalModel
 from shs.geometry import Mesh
-
+from shs.physics import Fields
 
 def thermal_step(
-    temperature: np.ndarray,
-    mesh: Mesh,
-    thermal_model: ThermalModel,
-    dt: float
+    fields: Fields,
+    mesh,
+    thermal_model,
+    dt
 ):
     """
-    Advance temperature field by one timestep.
+    Advance temperature using thermal diffusion.
 
-    Parameters
-    ----------
-    temperature:
-        Current temperature array.
-
-    mesh:
-        Simulation mesh.
-
-    thermal_model:
-        Thermal properties.
-
-    dt:
-        Time step.
-
-    Returns
-    -------
-    Updated temperature field.
+    Uses zero-flux boundary conditions.
     """
 
     alpha = thermal_model.thermal_diffusivity()
 
-    new_temperature = temperature.copy()
+    T = fields.temperature.copy()
+
+    heat_source = fields.heat_source
+
+    # Pad array using edge values.
+    # This creates zero-gradient boundaries.
+    padded = np.pad(
+        T,
+        pad_width=1,
+        mode="edge"
+    )
+
 
     laplacian = (
-        (
-            np.roll(temperature, 1, axis=0)
-            +
-            np.roll(temperature, -1, axis=0)
-            +
-            np.roll(temperature, 1, axis=1)
-            +
-            np.roll(temperature, -1, axis=1)
-            -
-            4 * temperature
-        )
-        /
-        mesh.dx**2
+
+        padded[2:,1:-1] +
+        padded[:-2,1:-1] +
+        padded[1:-1,2:] +
+        padded[1:-1,:-2] -
+
+        4 * padded[1:-1,1:-1]
+
+    ) / mesh.dx**2
+
+
+    update = alpha * dt * laplacian
+
+
+    if heat_source is not None:
+
+        update += (
+            dt *
+            heat_source /
+            thermal_model.heat_capacity
     )
 
+    fields.temperature = T + update
 
-    new_temperature += (
-        alpha *
-        dt *
-        laplacian
-    )
-
-
-    return new_temperature
+    return fields
