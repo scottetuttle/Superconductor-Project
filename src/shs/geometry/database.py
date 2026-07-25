@@ -6,7 +6,7 @@ Loads geometry definitions from JSON files.
 
 import json
 from pathlib import Path
-
+from .regions import Region
 from .geometry import RectangularFilm
 
 
@@ -28,7 +28,12 @@ def load_geometry(filepath: str | Path):
 
     with open(filepath, "r") as file:
         data = json.load(file)
+    if "regions" in data:
 
+        data["regions"] = [
+            Region(**region)
+            for region in data["regions"]
+    ]
     geometry_type = data.pop("type")
 
 

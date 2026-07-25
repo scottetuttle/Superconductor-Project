@@ -15,30 +15,12 @@ Future:
 """
 
 from dataclasses import dataclass
+from typing import List
+from .regions import Region
 
 
 @dataclass
 class RectangularFilm:
-    """
-    Represents a rectangular superconducting thin film.
-
-    Parameters
-    ----------
-    width:
-        Physical width in meters.
-
-    height:
-        Physical height in meters.
-
-    thickness:
-        Film thickness in meters.
-
-    nx:
-        Number of grid cells in x direction.
-
-    ny:
-        Number of grid cells in y direction.
-    """
 
     name: str
 
@@ -49,21 +31,9 @@ class RectangularFilm:
     nx: int
     ny: int
 
-
-    @property
-    def dx(self):
-        """
-        Grid spacing in x direction.
-        """
-        return self.width / self.nx
+    regions: list[Region] = None
 
 
-    @property
-    def dy(self):
-        """
-        Grid spacing in y direction.
-        """
-        return self.height / self.ny
 
 film = RectangularFilm(
     name = 'NbN_film',
@@ -72,4 +42,22 @@ film = RectangularFilm(
     thickness=100e-9,
     nx=100,
     ny=100
+)
+
+
+
+device = RectangularFilm(
+    name="NbN device",
+    width=5e-6,
+    height=5e-6,
+    thickness=100e-9,
+    nx=100,
+    ny=100,
+    regions=[
+        Region(
+            name="film",
+            region_type="superconductor",
+            material="NbN"
+        )
+    ]
 )

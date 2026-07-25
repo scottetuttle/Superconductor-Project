@@ -1,5 +1,6 @@
 {
     "type": "rectangle",
+
     "name": "NbN_test_film",
 
     "width": 5e-6,
@@ -7,5 +8,13 @@
     "thickness": 100e-9,
 
     "nx": 100,
-    "ny": 100
+    "ny": 100,
+
+    "regions": [
+        {
+            "name": "NbN film",
+            "region_type": "superconductor",
+            "material": "NbN"
+        }
+    ]
 }

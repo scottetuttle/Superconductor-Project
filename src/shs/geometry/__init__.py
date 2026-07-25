@@ -12,4 +12,6 @@ __all__ = [
     "Mesh",
     "create_mesh",
     "load_geometry",
+    "regions",
+    "contacts"
 ]
