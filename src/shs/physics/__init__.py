@@ -13,8 +13,10 @@ Numerical solution is handled separately in shs.solvers.
 """
 
 from .fields import Fields
+from .thermal import ThermalModel
 
 
 __all__ = [
-    "Fields"
+    "Fields",
+    "ThermalModel",
 ]
