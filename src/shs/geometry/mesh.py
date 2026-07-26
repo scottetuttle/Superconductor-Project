@@ -30,14 +30,14 @@ def create_mesh(geometry):
 
     x = np.linspace(
         0,
-        geometry.width,
-        geometry.nx
+        geometry.film.width,
+        geometry.film.nx
     )
 
     y = np.linspace(
         0,
-        geometry.height,
-        geometry.ny
+        geometry.film.height,
+        geometry.film.ny
     )
 
 
@@ -45,9 +45,9 @@ def create_mesh(geometry):
         x=x,
         y=y,
 
-        nx=geometry.nx,
-        ny=geometry.ny,
+        nx=geometry.film.nx,
+        ny=geometry.film.ny,
 
-        dx=geometry.nx,
-        dy=geometry.ny
+        dx=geometry.film.nx,
+        dy=geometry.film.ny
     )

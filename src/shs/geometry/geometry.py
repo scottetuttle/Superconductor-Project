@@ -17,7 +17,33 @@ Future:
 from dataclasses import dataclass
 from typing import List
 from .regions import Region
-from .contacts import Contact
+
+
+@dataclass
+class Contact:
+    """
+    Represents an electrical contact attached to the device.
+    """
+
+    name: str
+
+    x: float
+    y: float
+
+    width: float
+    height: float
+
+
+@dataclass
+class VoltageProbe:
+    """
+    Represents a voltage measurement location.
+    """
+
+    name: str
+
+    x: float
+    y: float
 
 
 @dataclass
@@ -36,30 +62,16 @@ class RectangularFilm:
     contacts: list[Contact] | None = None
 
 
+@dataclass
+class Geometry:
+    """
+    Complete description of a simulated device.
+    """
 
-film = RectangularFilm(
-    name = 'NbN_film',
-    width=5e-6,
-    height=5e-6,
-    thickness=100e-9,
-    nx=100,
-    ny=100
-)
+    film: RectangularFilm
 
+    contacts: List[Contact]
 
+    voltage_probes: List[VoltageProbe]
 
-device = RectangularFilm(
-    name="NbN device",
-    width=5e-6,
-    height=5e-6,
-    thickness=100e-9,
-    nx=100,
-    ny=100,
-    regions=[
-        Region(
-            name="film",
-            region_type="superconductor",
-            material="NbN"
-        )
-    ]
-)
+    regions: List[Region]

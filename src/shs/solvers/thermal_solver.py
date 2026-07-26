@@ -62,6 +62,17 @@ def thermal_step(
             heat_source /
             thermal_model.heat_capacity
     )
+    cooling = (
+        thermal_model.thermal_relaxation_rate
+        *
+        (
+            T
+            -
+            thermal_model.bath_temperature
+        )
+)
+
+    update -= dt * cooling
 
     fields.temperature = T + update
 

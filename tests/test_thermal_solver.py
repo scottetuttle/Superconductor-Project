@@ -27,7 +27,8 @@ def test_heat_diffusion():
     thermal = ThermalModel(
         thermal_conductivity=10,
         heat_capacity=2e6,
-        bath_temperature=3
+        bath_temperature=3,
+        thermal_relaxation_rate=0.0
     )
 
     updated_fields = thermal_step(
@@ -73,7 +74,8 @@ def test_boundary_stability():
     thermal = ThermalModel(
         thermal_conductivity=10,
         heat_capacity=2e6,
-        bath_temperature=3
+        bath_temperature=3,
+        thermal_relaxation_rate=0.0
     )
 
 
@@ -109,7 +111,8 @@ def test_hotspot_heating():
     thermal = ThermalModel(
         thermal_conductivity=10,
         heat_capacity=2e6,
-        bath_temperature=3.0
+        bath_temperature=3,
+        thermal_relaxation_rate=0.0
     )
 
 
@@ -122,3 +125,100 @@ def test_hotspot_heating():
 
 
     assert updated_fields.temperature[50,50] > 3.0
+
+def test_uniform_temperature_remains_constant():
+
+    geometry = load_geometry(
+        "configs/geometry/NbN_film.json"
+    )
+
+    mesh = create_mesh(geometry)
+
+    fields = Fields.create(
+        mesh,
+        initial_temperature=3.0
+    )
+
+    thermal = ThermalModel(
+        thermal_conductivity=10,
+        heat_capacity=2e6,
+        bath_temperature=3,
+        thermal_relaxation_rate=0.0
+    )
+
+    updated_fields = thermal_step(
+        fields,
+        mesh,
+        thermal,
+        dt=1e-6
+    )
+
+    assert np.allclose(
+        updated_fields.temperature,
+        fields.temperature
+    )
+
+def test_bath_cooling():
+
+    geometry = load_geometry(
+        "configs/geometry/NbN_film.json"
+    )
+
+    mesh = create_mesh(geometry)
+
+    fields = Fields.create(
+        mesh,
+        initial_temperature=10.0
+    )
+
+    thermal = ThermalModel(
+        thermal_conductivity=10,
+        heat_capacity=2e6,
+        bath_temperature=3.0,
+        thermal_relaxation_rate=100.0
+    )
+
+    updated_fields = thermal_step(
+        fields,
+        mesh,
+        thermal,
+        dt=1e-6
+    )
+
+    assert (
+        updated_fields.temperature[50, 50]
+        <
+        10.0
+    )
+
+def test_bath_equilibrium():
+
+    geometry = load_geometry(
+        "configs/geometry/NbN_film.json"
+    )
+
+    mesh = create_mesh(geometry)
+
+    fields = Fields.create(
+        mesh,
+        initial_temperature=3.0
+    )
+
+    thermal = ThermalModel(
+        thermal_conductivity=10,
+        heat_capacity=2e6,
+        bath_temperature=3.0,
+        thermal_relaxation_rate=100.0
+    )
+
+    updated_fields = thermal_step(
+        fields,
+        mesh,
+        thermal,
+        dt=1e-6
+    )
+
+    assert np.allclose(
+        updated_fields.temperature,
+        3.0
+    )

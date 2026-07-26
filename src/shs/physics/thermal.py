@@ -136,7 +136,21 @@ class ThermalModel:
 
     bath_temperature: float
 
-    thermal_boundary_conductance: float | None = None
+    thermal_relaxation_rate: float | None = None
+
+
+    """
+    thermal_relaxation_rate
+
+    Coupling strength between the superconducting film
+    and the thermal bath (substrate).
+
+    Larger values remove heat more quickly.
+
+    Units:
+        1/s
+    """
+    thermal_relaxation_rate: float
 
 
     def thermal_diffusivity(self):
