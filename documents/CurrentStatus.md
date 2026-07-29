@@ -8,20 +8,26 @@ Last Updated: July 2026
 
 # Current Development Phase
 
-## Phase: Foundation Infrastructure Development
+## Phase: Simulation Infrastructure Integration
 
-The current focus of SHS is building a stable, modular simulation foundation before implementing advanced superconducting physics.
+The current focus of SHS is completing the foundation layer required before implementing advanced superconducting physics.
 
-The current development priority is:
+The project has moved beyond individual component development and now has a working simulation initialization pipeline.
 
-Geometry  
+Current development priority:
+
+Configuration  
+→ Data Objects  
+→ Geometry  
 → Mesh  
-→ Material Maps  
+→ Region Mapping  
+→ Material Mapping  
+→ Boundary Conditions  
 → Fields  
 → Physics Models  
 → Solvers
 
-Advanced physics such as TDGL, vortex dynamics, and electromagnetic coupling should not be implemented until the foundational infrastructure is complete and validated.
+Advanced physics such as TDGL, vortex dynamics, and electromagnetic coupling should remain deferred until the simulation infrastructure is fully validated.
 
 ---
 
@@ -38,11 +44,14 @@ Implemented:
 - Configuration directories
 - Simulation directories
 - Testing framework
+- Independent physics modules
 
 Current project organization separates:
 
 - geometry
 - materials
+- mapping
+- boundaries
 - optics
 - physics
 - solvers
@@ -67,14 +76,15 @@ Implemented:
 
 Current capabilities:
 
-Materials can be defined independently and loaded through the SHS material system.
+Materials can be independently defined and loaded through the SHS material system.
 
-Current supported material information includes:
+Supported material information includes:
 
 - material name
 - critical temperature
 - thickness
 - thermal properties
+- electrical properties
 - superconducting properties
 
 Example material:
@@ -84,9 +94,10 @@ Example material:
 Future expansion:
 
 - temperature-dependent properties
+- field-dependent properties
 - spatial material variations
 - literature references
-- experimental material datasets
+- experimental datasets
 
 ---
 
@@ -101,6 +112,7 @@ Implemented:
 - JSON geometry configuration
 - Region loading
 - Contact loading
+- Voltage probe loading
 
 Current geometry structure:
 
@@ -129,56 +141,7 @@ Geometry does not contain:
 - material calculations
 - solver logic
 
-This keeps the system modular and allows future expansion.
-
----
-
-# Current Geometry Configuration
-
-Current supported device:
-
-NbN rectangular superconducting film
-
-Current configurable parameters:
-
-- width
-- height
-- thickness
-- mesh resolution
-- regions
-- contacts
-
-Example configuration capabilities:
-
-- define superconducting film area
-- assign material regions
-- define electrical contacts
-
-Current geometry configuration is loaded from JSON files.
-
-Current flow:
-
-
-JSON Configuration
-
-    |
-
-    v
-
-load_geometry()
-
-    |
-
-    v
-
-Geometry Object
-
-    |
-
-    v
-
-Mesh Generation
-
+This preserves modularity and allows future support for more complex devices.
 
 ---
 
@@ -188,9 +151,11 @@ Status: COMPLETE (Foundation)
 
 Implemented:
 
-- Rectangular mesh creation
 - Geometry-based mesh generation
+- Rectangular numerical grids
+- Spatial discretization
 - Mesh dimension handling
+- Correct dx/dy calculation
 
 Current purpose:
 
@@ -200,17 +165,160 @@ Current mesh supports:
 
 - nx resolution
 - ny resolution
-- spatial discretization
+- x coordinates
+- y coordinates
+- spatial step sizes
 
-Current limitation:
+Future expansion:
 
-The mesh does not yet contain:
-
-- material masks
-- region masks
 - contact masks
+- region masks
+- adaptive refinement
+- multilayer meshes
 
-These are the next development targets.
+---
+
+# Region Mapping System
+
+Status: COMPLETE (Initial Implementation)
+
+Implemented:
+
+- RegionMap dataclass
+- Geometry-to-mesh region conversion
+- Region ID arrays
+- Region name mapping
+- Region type mapping
+
+Current implementation:
+
+All mesh cells currently belong to the superconducting film region.
+
+Current representation:
+
+
+region_ids
+
+[
+[0,0,0,0],
+[0,0,0,0],
+[0,0,0,0]
+]
+
+0 → film
+
+
+Region metadata:
+
+
+0:
+name: film
+type: superconductor
+
+
+Future expansion:
+
+- substrates
+- contacts
+- defects
+- oxides
+- patterned superconductors
+- multilayer structures
+
+---
+
+# Material Mapping System
+
+Status: COMPLETE (Initial Implementation)
+
+Implemented:
+
+- MaterialMap dataclass
+- RegionMap to MaterialMap conversion
+- Spatial material property arrays
+- Material ID tracking
+
+Current mapped properties:
+
+- thermal conductivity
+- heat capacity
+- normal resistivity
+- thickness
+- critical temperature
+- coherence length
+- penetration depth
+
+Current implementation:
+
+The entire superconducting film is assigned a single material.
+
+Example:
+
+
+Material ID:
+
+0 → NbN
+
+
+Future expansion:
+
+- multiple materials
+- substrates
+- contacts
+- defects
+- spatially varying properties
+- temperature-dependent properties
+
+---
+
+# Boundary Condition System
+
+Status: COMPLETE (Foundation)
+
+Implemented:
+
+- BoundaryCondition dataclass
+- BoundarySet container
+- BoundarySide definitions
+- BoundaryType definitions
+- JSON boundary loading
+
+Supported boundary concepts:
+
+- fixed temperature boundaries
+- insulating boundaries
+- heat transfer boundaries
+- heat flux boundaries
+
+Current example:
+
+
+left:
+fixed_temperature
+4.2 K
+
+right:
+fixed_temperature
+4.2 K
+
+top:
+insulating
+
+bottom:
+insulating
+
+
+Design decision:
+
+Boundary conditions are treated as independent physical constraints.
+
+Future expansion:
+
+- vacuum chamber boundaries
+- helium cooling models
+- substrate coupling
+- radiative losses
+- temperature-dependent thermal interfaces
 
 ---
 
@@ -226,7 +334,7 @@ Implemented:
 
 Purpose:
 
-Store the current simulation state independently from physics calculations.
+Store simulation state independently from physics calculations.
 
 Current fields:
 
@@ -249,6 +357,91 @@ electric_potential
 
 magnetic_field
 
+
+---
+
+# Simulation Configuration System
+
+Status: COMPLETE
+
+Implemented:
+
+- SimulationConfig dataclass
+- JSON simulation loading
+- Simulation parameter parsing
+- Boundary configuration loading
+
+Current simulation configuration supports:
+
+- geometry selection
+- material selection
+- initial temperature
+- current
+- simulation duration
+- timestep
+- boundary definitions
+
+Example:
+
+
+nbn_hotspot_test.json
+
+
+---
+
+# Simulation Builder
+
+Status: COMPLETE (Initial Implementation)
+
+Implemented:
+
+- Simulation construction pipeline
+- Runtime Simulation object
+- Automatic initialization of:
+
+    - configuration
+    - geometry
+    - mesh
+    - region map
+    - material map
+    - boundary conditions
+
+Current workflow:
+
+
+Simulation JSON
+
+    |
+
+    v
+
+Simulation Builder
+
+    |
+
+    v
+
+Complete Simulation State
+
+
+Example usage:
+
+
+build_simulation(
+"configs/simulations/nbn_hotspot_test.json"
+)
+
+
+Purpose:
+
+Provide a single entry point for creating a complete SHS simulation.
+
+Future expansion:
+
+- validation
+- solver initialization
+- experiment management
+- parameter sweeps
 
 ---
 
@@ -290,10 +483,16 @@ Implemented:
 
 Validated behavior:
 
-- Hot regions diffuse heat into surrounding regions
+- Hot regions diffuse heat
 - Uniform temperatures remain stable
 - Heat sources increase temperature
 - Systems cool toward bath temperature
+
+Future work:
+
+- connect solver to Simulation Builder
+- replace assumptions with MaterialMap values
+- implement configurable boundary conditions
 
 ---
 
@@ -313,6 +512,7 @@ Current tests validate:
 - Geometry loading
 - Region loading
 - Contact loading
+- Voltage probe loading
 
 ## Mesh
 
@@ -332,36 +532,39 @@ Current tests validate:
 - Cooling behavior
 - Bath equilibrium
 
-All current tests are passing after recent geometry and thermal architecture updates.
+## Mapping
+
+- Region map generation
+- Region identifiers
+- Region metadata
+- Material map generation
+- Spatial material properties
+
+## Boundaries
+
+- Boundary creation
+- Boundary JSON loading
+- Boundary types
+- Boundary storage
+
+## Simulation Builder
+
+- Complete simulation construction
+- Geometry initialization
+- Material initialization
+- Boundary initialization
+
+All current tests are passing.
 
 ---
 
 # Current Architecture Decisions
 
-## Geometry Abstraction
-
-Decision:
-
-Use a Geometry container instead of directly passing RectangularFilm objects.
-
-Reason:
-
-Allows future support for:
-
-- multiple superconducting layers
-- arbitrary device geometries
-- patterned structures
-- defects
-- contacts
-- voltage probes
-
----
-
 ## Configuration Driven Design
 
 Decision:
 
-Physical parameters should be stored in configuration files.
+Physical parameters are stored in configuration files.
 
 Preferred flow:
 
@@ -372,13 +575,19 @@ Configuration File
 
     v
 
-Python Object
+Python Data Objects
 
     |
 
     v
 
-Simulation
+Simulation State
+
+    |
+
+    v
+
+Solvers
 
 
 Avoid hard-coded physical parameters.
@@ -397,52 +606,73 @@ Thermal physics should not:
 
 - load JSON files
 - create geometry
-- control visualization
+- manage visualization
 
 Each module should have a single responsibility.
 
 ---
 
+## Mapping Separation
+
+Decision:
+
+Geometry, regions, and materials remain separate systems.
+
+Relationship:
+
+
+Geometry
+
+defines physical layout
+
+RegionMap
+
+defines what occupies each mesh cell
+
+MaterialMap
+
+defines physical properties at each cell
+
+
+This allows future support for complex devices without redesigning the solver architecture.
+
+---
+
 # Current Development Task
 
-## Geometry to Mesh Mapping
+## Simulation Validation Layer
 
 Current focus:
 
-Connect geometry information to mesh-level information.
+Create validation tools that verify a constructed simulation is physically and numerically consistent.
 
-The first goal is implementing contact masks.
-
-Current geometry:
+Target:
 
 
-Contact:
-
-{
-"name": "left_current",
-"contact_type": "current",
-"location": "left_edge"
-}
+simulation.validate()
 
 
-Target mesh representation:
+Validation should check:
 
+Geometry:
 
-mesh.contact_masks
+- geometry exists
+- mesh matches geometry
 
-left_current:
+Region Mapping:
 
-cells located on left boundary
+- all cells have valid regions
+- region metadata exists
 
+Material Mapping:
 
-Purpose:
+- material arrays match mesh dimensions
+- all cells have valid material properties
 
-Prepare infrastructure for:
+Boundary Conditions:
 
-- current injection
-- voltage measurements
-- electrical transport
-- Joule heating
+- boundary definitions are valid
+- required conditions are present
 
 ---
 
@@ -450,65 +680,56 @@ Prepare infrastructure for:
 
 ## Step 1
 
-Implement contact masks in the mesh.
+Implement simulation validation.
 
 Requirements:
 
-- Identify mesh cells belonging to each contact.
-- Store contact information in a reusable format.
-- Maintain compatibility with current geometry objects.
+- Add validation methods
+- Create validation tests
+- Detect invalid simulation configurations
 
 ---
 
 ## Step 2
 
-Add contact mask tests.
+Connect thermal solver to Simulation State.
 
-Tests should verify:
+Goal:
 
-- left edge contacts map correctly
-- right edge contacts map correctly
-- contact cells have correct indices
-- invalid contacts fail appropriately
+Replace manually supplied values with:
+
+- Mesh
+- MaterialMap
+- BoundarySet
+- Fields
 
 ---
 
 ## Step 3
 
-Implement material region masks.
+Create first complete thermal experiment.
 
-Goal:
+Target:
 
-Convert geometry regions into mesh regions.
+NbN superconducting film:
 
-Example:
-
-
-Mesh:
-
-cell (50,50)
-
-belongs to:
-
-Region:
-NbN film
-
-Material:
-NbN
-
+- initial temperature
+- bath temperature
+- optical hotspot
+- thermal diffusion
+- hotspot evolution
 
 ---
 
 ## Step 4
 
-Create spatial material property maps.
+Expand device representation.
 
-Examples:
+Implement:
 
-- thermal conductivity map
-- heat capacity map
-- resistivity map
-- critical temperature map
+- contact masks
+- voltage probe masks
+- region-specific materials
 
 ---
 
@@ -523,6 +744,7 @@ Complete:
 - voltage probes
 - regions
 - mesh masks
+- validation
 
 ---
 
@@ -530,9 +752,10 @@ Complete:
 
 Implement:
 
-- spatial material properties
+- multiple materials
+- substrates
 - temperature-dependent properties
-- material databases
+- experimental material datasets
 
 ---
 
@@ -555,6 +778,7 @@ Implement:
 - electric potential
 - current density
 - Joule heating
+- resistive transitions
 
 ---
 
@@ -588,14 +812,20 @@ Status:
 
 FOUNDATION SYSTEM WORKING
 
-Current implementation is stable.
+The SHS infrastructure is now capable of constructing complete simulation states from configuration files.
 
-The project currently has:
+Current implementation includes:
 
 - working material infrastructure
 - working geometry infrastructure
 - working mesh generation
+- working region mapping
+- working material mapping
+- working boundary condition system
+- working simulation builder
 - working field containers
-- working thermal simulation
+- working thermal simulation foundation
 
-The next development priority is strengthening the connection between geometry, mesh, and materials before introducing electrical or superconducting physics.
+The project has transitioned from building isolated components into integrating a complete simulation framework.
+
+The next development priority is implementing simulation validation and connecting existing physics solvers to the new simulation architecture before introducing advanced superconducting models.
