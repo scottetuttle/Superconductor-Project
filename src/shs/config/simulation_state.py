@@ -1,9 +1,3 @@
-"""
-Runtime simulation state.
-
-Contains initialized objects required by solvers.
-"""
-
 from dataclasses import dataclass
 
 from shs.config.simulation import SimulationConfig
@@ -15,6 +9,8 @@ from shs.mapping.region_map import RegionMap
 from shs.mapping.material_map import MaterialMap
 
 from shs.boundaries.boundary import BoundarySet
+
+from .validator import validate_simulation
 
 
 @dataclass
@@ -34,3 +30,11 @@ class Simulation:
     material_map: MaterialMap
 
     boundaries: BoundarySet
+
+
+    def validate(self):
+        """
+        Validate the simulation before running any solver.
+        """
+
+        return validate_simulation(self)
