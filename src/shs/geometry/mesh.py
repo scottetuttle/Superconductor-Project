@@ -48,6 +48,6 @@ def create_mesh(geometry):
         nx=geometry.film.nx,
         ny=geometry.film.ny,
 
-        dx=geometry.film.nx,
-        dy=geometry.film.ny
+        dx = geometry.film.width / (geometry.film.nx - 1),
+        dy = geometry.film.height / (geometry.film.ny - 1)
     )
