@@ -2,12 +2,7 @@
 Mapping package.
 
 Responsible for converting geometry into numerical property maps.
-
-Current:
-- RegionMap
-
-Future:
-- MaterialMap
 """
 
 from .region_map import RegionMap, build_region_map
+from .material_map import MaterialMap, build_material_map
