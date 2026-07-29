@@ -62,3 +62,18 @@ def test_region_dictionary():
         region_map.region_names[0]
         == "film"
     )
+
+def test_region_type():
+
+    geometry = load_geometry(
+        "configs/geometry/NbN_film.json"
+    )
+
+    mesh = create_mesh(geometry)
+
+    region_map = build_region_map(
+        geometry,
+        mesh
+    )
+
+    assert region_map.region_types[0] == "superconductor"

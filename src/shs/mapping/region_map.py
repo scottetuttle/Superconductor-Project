@@ -32,6 +32,10 @@ class RegionMap:
 
     region_names: dict[int, str]
 
+    region_types: dict[int, str]
+
+
+
 
 def build_region_map(
     geometry: Geometry,
@@ -52,7 +56,6 @@ def build_region_map(
     -------
     RegionMap
     """
-
     ids = np.zeros(
         (mesh.ny, mesh.nx),
         dtype=np.int32
@@ -60,9 +63,13 @@ def build_region_map(
 
     region_names = {
         0: "film"
-    }
+}
 
+    region_types = {
+        0: "superconductor"
+}
     return RegionMap(
         region_ids=ids,
-        region_names=region_names
+        region_names=region_names,
+        region_types=region_types,
     )

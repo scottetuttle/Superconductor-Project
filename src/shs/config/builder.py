@@ -25,16 +25,24 @@ from shs.boundaries.boundary import (
     BoundaryType,
 )
 
+from pathlib import Path
+
 
 def build_simulation(filepath):
-
+    CONFIG_ROOT = Path("configs")
     config = load_simulation(filepath)
 
 
     # Geometry
 
-    geometry = load_geometry(
+    geometry_path = (
+        CONFIG_ROOT /
+        "geometry" /
         config.geometry
+    )
+
+    geometry = load_geometry(
+        geometry_path
     )
 
 
@@ -53,6 +61,12 @@ def build_simulation(filepath):
 
     # Material mapping
 
+    material_path = (
+        CONFIG_ROOT /
+        "materials" /
+        config.material
+    )
+    
     material_name = (
         config.material.replace(
             ".json",
