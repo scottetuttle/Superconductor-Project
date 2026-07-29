@@ -14,5 +14,21 @@
     "time": {
         "duration": 1e-6,
         "dt": 1e-9
+    },
+    "boundaries": {
+        "left": {
+            "type": "fixed_temperature",
+            "temperature": 4.2
+    },
+        "right": {
+            "type": "fixed_temperature",
+            "temperature": 4.2
+    },
+        "top": {
+            "type": "insulating"
+    },
+        "bottom": {
+            "type": "insulating"
     }
+}
 }

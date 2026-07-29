@@ -17,3 +17,4 @@ from .boundary import (
     BoundaryType,
     BoundarySet,
 )
+from .database import load_boundary_set

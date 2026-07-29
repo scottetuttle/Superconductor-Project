@@ -10,13 +10,13 @@ def test_boundary_creation():
 
     boundary = BoundaryCondition(
         side=BoundarySide.LEFT,
-        model=BoundaryType.FIXED_TEMPERATURE,
+        type=BoundaryType.FIXED_TEMPERATURE,
         temperature=4.2,
     )
 
     assert boundary.side == BoundarySide.LEFT
 
-    assert boundary.model == BoundaryType.FIXED_TEMPERATURE
+    assert boundary.type == BoundaryType.FIXED_TEMPERATURE
 
     assert boundary.temperature == 4.2
 
@@ -25,24 +25,24 @@ def test_boundary_set():
 
     left = BoundaryCondition(
         side=BoundarySide.LEFT,
-        model=BoundaryType.FIXED_TEMPERATURE,
+        type=BoundaryType.FIXED_TEMPERATURE,
         temperature=4.2,
     )
 
     right = BoundaryCondition(
         side=BoundarySide.RIGHT,
-        model=BoundaryType.FIXED_TEMPERATURE,
+        type=BoundaryType.FIXED_TEMPERATURE,
         temperature=4.2,
     )
 
     top = BoundaryCondition(
         side=BoundarySide.TOP,
-        model=BoundaryType.INSULATING,
+        type=BoundaryType.INSULATING,
     )
 
     bottom = BoundaryCondition(
         side=BoundarySide.BOTTOM,
-        model=BoundaryType.INSULATING,
+        type=BoundaryType.INSULATING,
     )
 
     boundaries = BoundarySet(
@@ -60,7 +60,7 @@ def test_boundary_set():
 
     assert boundaries.get(
         BoundarySide.TOP
-    ).model == BoundaryType.INSULATING
+    ).type == BoundaryType.INSULATING
 
 def test_boundary_add():
 
@@ -68,7 +68,7 @@ def test_boundary_add():
 
     left = BoundaryCondition(
         side=BoundarySide.LEFT,
-        model=BoundaryType.FIXED_TEMPERATURE,
+        type=BoundaryType.FIXED_TEMPERATURE,
         temperature=4.2,
     )
 

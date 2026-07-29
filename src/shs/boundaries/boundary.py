@@ -40,7 +40,7 @@ class BoundaryCondition:
 
     side: BoundarySide
 
-    model: BoundaryType
+    type: BoundaryType
 
     # Temperature of surrounding bath (K)
     temperature: float | None = None
@@ -54,6 +54,9 @@ class BoundaryCondition:
 
 @dataclass
 class BoundarySet:
+    """
+    Collection of boundary conditions.
+    """
 
     boundaries: dict[BoundarySide, BoundaryCondition] = field(
         default_factory=dict
@@ -62,21 +65,37 @@ class BoundarySet:
     def add(
         self,
         boundary: BoundaryCondition,
-    ):
+    ) -> None:
         """
-        Add or replace a boundary.
+        Add or replace a boundary condition.
         """
 
         self.boundaries[boundary.side] = boundary
+
 
     def get(
         self,
         side: BoundarySide,
     ) -> BoundaryCondition:
         """
-        Retrieve a boundary.
+        Retrieve a boundary condition.
         """
 
         return self.boundaries[side]
+
+
+    def __contains__(
+        self,
+        side: BoundarySide,
+    ) -> bool:
+        """
+        Allow:
+
+        BoundarySide.LEFT in boundaries
+        """
+
+        return side in self.boundaries
+
+
     def __iter__(self):
         return iter(self.boundaries.values())
