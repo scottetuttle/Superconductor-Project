@@ -19,16 +19,16 @@
         "left": {
             "type": "fixed_temperature",
             "temperature": 4.2
-    },
+        },
         "right": {
             "type": "fixed_temperature",
             "temperature": 4.2
-    },
+        },
         "top": {
             "type": "insulating"
-    },
+        },
         "bottom": {
             "type": "insulating"
-    }
+        }
 }
 }

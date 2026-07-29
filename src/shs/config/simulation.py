@@ -22,6 +22,7 @@ class SimulationConfig:
     duration: float
     dt: float
 
+    boundaries: dict
 
 
 def load_simulation(filepath):
@@ -42,5 +43,7 @@ def load_simulation(filepath):
         current=data["current"]["value"],
 
         duration=data["time"]["duration"],
-        dt=data["time"]["dt"]
-    )
+        dt=data["time"]["dt"],
+
+        boundaries=data["boundaries"]
+)
