@@ -45,8 +45,8 @@ class Fields:
         """
 
         shape = (
-            mesh.nx,
-            mesh.ny
+            mesh.ny,
+            mesh.nx
         )
 
         return cls(

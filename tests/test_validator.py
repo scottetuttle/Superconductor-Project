@@ -21,3 +21,18 @@ def test_simulation_validation():
     )
 
     assert simulation.validate()
+
+
+def test_invalid_field_shape():
+
+    simulation = build_simulation(
+        "configs/simulations/nbn_hotspot_test.json"
+    )
+
+    simulation.fields.temperature = (
+        simulation.fields.temperature[:-1]
+    )
+
+    with pytest.raises(ValueError):
+
+        simulation.validate()

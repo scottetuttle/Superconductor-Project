@@ -18,6 +18,7 @@ def test_build_simulation():
 
     assert simulation.boundaries is not None
 
+    assert simulation.fields is not None
 
 
 def test_builder_material():
@@ -47,3 +48,16 @@ def test_builder_boundary():
     )
 
     assert left.temperature == 4.2
+
+def test_builder_fields():
+
+    simulation = build_simulation(
+        "configs/simulations/nbn_hotspot_test.json"
+    )
+
+    assert simulation.fields.temperature[0, 0] == 3.0
+
+    assert simulation.fields.temperature.shape == (
+        simulation.mesh.ny,
+        simulation.mesh.nx,
+    )

@@ -64,6 +64,28 @@ def validate_simulation(simulation):
             raise ValueError(
                 f"Unknown material id: {material_id}"
             )
+    # ---------- Fields ----------
+
+    field_arrays = [
+
+        simulation.fields.temperature,
+
+        simulation.fields.voltage,
+
+        simulation.fields.current_density_x,
+
+        simulation.fields.current_density_y,
+
+        simulation.fields.heat_source,
+]
+
+    for array in field_arrays:
+
+        if array.shape != mesh_shape:
+
+            raise ValueError(
+                "Field shape does not match mesh."
+        )
 
     # ---------- Boundaries ----------
 

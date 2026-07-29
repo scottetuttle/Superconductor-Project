@@ -1,14 +1,11 @@
 from shs.physics import ThermalModel
 
+
 def test_thermal_diffusivity():
 
-    thermal = ThermalModel(
+    alpha = ThermalModel.thermal_diffusivity(
         thermal_conductivity=10,
-        heat_capacity=2e6,
-        bath_temperature=3,
-        thermal_relaxation_rate=0.0
+        heat_capacity=2e6
     )
-
-    alpha = thermal.thermal_diffusivity()
 
     assert alpha == 5e-6

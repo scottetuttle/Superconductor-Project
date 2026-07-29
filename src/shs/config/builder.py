@@ -27,6 +27,8 @@ from shs.boundaries.boundary import (
 
 from pathlib import Path
 
+from shs.physics.fields import Fields
+
 
 def build_simulation(filepath):
     CONFIG_ROOT = Path("configs")
@@ -66,7 +68,7 @@ def build_simulation(filepath):
         "materials" /
         config.material
     )
-    
+
     material_name = (
         config.material.replace(
             ".json",
@@ -90,6 +92,13 @@ def build_simulation(filepath):
     boundaries = BoundarySet()
 
     for side_name, values in config.boundaries.items():
+
+        # Runtime fields
+
+        fields = Fields.create(
+        mesh=mesh,
+        initial_temperature=config.temperature,
+)
 
         boundary = BoundaryCondition(
 
@@ -117,6 +126,7 @@ def build_simulation(filepath):
         )
 
 
+
     return Simulation(
 
         config=config,
@@ -130,4 +140,6 @@ def build_simulation(filepath):
         material_map=material_map,
 
         boundaries=boundaries,
+
+        fields=fields,
     )

@@ -1,38 +1,82 @@
 """
-Thermal diffusion solver for SHS.
+Thermal solver for SHS.
 
-Solves the heat diffusion equation:
+Solves:
 
-dT/dt = alpha * laplacian(T)
+dT/dt = alpha * laplacian(T) + Q/C - cooling
 
+where:
+
+alpha = k/C
+
+k and C are spatial material properties supplied
+by MaterialMap.
+
+The solver operates directly on the Simulation object.
 """
 
 import numpy as np
 
-from shs.physics import ThermalModel
-from shs.geometry import Mesh
-from shs.physics import Fields
+from shs.config.simulation_state import Simulation
+from shs.physics.thermal import ThermalModel
+
 
 def thermal_step(
-    fields: Fields,
-    mesh,
-    thermal_model,
-    dt
+    simulation: Simulation,
+    dt: float,
+    thermal_model: ThermalModel,
 ):
     """
-    Advance temperature using thermal diffusion.
+    Advance the thermal state by one timestep.
 
-    Uses zero-flux boundary conditions.
+    Parameters
+    ----------
+    simulation:
+        Complete SHS simulation state.
+
+    dt:
+        Time step.
+
+    thermal_model:
+        Thermal physics configuration.
+
+    Returns
+    -------
+    Fields
+        Updated simulation fields.
     """
 
-    alpha = thermal_model.thermal_diffusivity()
+    mesh = simulation.mesh
+
+    fields = simulation.fields
+
+    material_map = simulation.material_map
+
+
+    # Temperature field
 
     T = fields.temperature.copy()
 
+
+    # Spatial material properties
+
+    k = material_map.thermal_conductivity
+
+    C = material_map.heat_capacity
+
+
+    # Thermal diffusivity
+
+    alpha = k / C
+
+
+    # Heat source
+
     heat_source = fields.heat_source
 
-    # Pad array using edge values.
-    # This creates zero-gradient boundaries.
+
+    # Zero-gradient boundary padding
+
     padded = np.pad(
         T,
         pad_width=1,
@@ -52,28 +96,45 @@ def thermal_step(
     ) / mesh.dx**2
 
 
-    update = alpha * dt * laplacian
+    # Diffusion term
 
+    update = (
+        alpha *
+        dt *
+        laplacian
+    )
+
+
+    # External heating
 
     if heat_source is not None:
 
         update += (
             dt *
             heat_source /
-            thermal_model.heat_capacity
-    )
-    cooling = (
-        thermal_model.thermal_relaxation_rate
-        *
-        (
-            T
-            -
-            thermal_model.bath_temperature
+            C
         )
-)
 
-    update -= dt * cooling
+
+    # Thermal bath coupling
+
+    if thermal_model.thermal_relaxation_rate > 0:
+
+        cooling = (
+            thermal_model.thermal_relaxation_rate
+            *
+            (
+                T -
+                thermal_model.bath_temperature
+            )
+        )
+
+        update -= dt * cooling
+
+
+    # Update field
 
     fields.temperature = T + update
+
 
     return fields

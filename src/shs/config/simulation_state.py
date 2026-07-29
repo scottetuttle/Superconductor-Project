@@ -12,6 +12,8 @@ from shs.boundaries.boundary import BoundarySet
 
 from .validator import validate_simulation
 
+from shs.physics.fields import Fields
+
 
 @dataclass
 class Simulation:
@@ -30,6 +32,8 @@ class Simulation:
     material_map: MaterialMap
 
     boundaries: BoundarySet
+
+    fields: Fields
 
 
     def validate(self):
