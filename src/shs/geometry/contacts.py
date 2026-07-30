@@ -11,4 +11,8 @@ class Contact:
 
     contact_type: str
 
-    location: str
+    x: float
+    y: float
+
+    x_size: float
+    y_size: float

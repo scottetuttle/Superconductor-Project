@@ -14,6 +14,8 @@ from .validator import validate_simulation
 
 from shs.physics.fields import Fields
 
+from shs.mapping.contact_map import ContactMap
+
 
 @dataclass
 class Simulation:
@@ -34,6 +36,8 @@ class Simulation:
     boundaries: BoundarySet
 
     fields: Fields
+
+    contact_map: ContactMap
 
 
     def validate(self):

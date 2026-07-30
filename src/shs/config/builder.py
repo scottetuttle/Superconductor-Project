@@ -29,6 +29,8 @@ from pathlib import Path
 
 from shs.physics.fields import Fields
 
+from shs.mapping import build_contact_map
+
 
 def build_simulation(filepath):
     CONFIG_ROOT = Path("configs")
@@ -86,7 +88,10 @@ def build_simulation(filepath):
         material
     )
 
-
+    contact_map = build_contact_map(
+        geometry,
+        mesh,
+)
     # Boundaries
 
     boundaries = BoundarySet()
@@ -142,4 +147,6 @@ def build_simulation(filepath):
         boundaries=boundaries,
 
         fields=fields,
+
+        contact_map=contact_map,
     )

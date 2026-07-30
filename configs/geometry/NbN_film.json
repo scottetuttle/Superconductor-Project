@@ -21,12 +21,32 @@
     {
         "name": "left_current",
         "contact_type": "current",
-        "location": "left_edge"
+
+        "x": 0.0,
+        "y": 2.0e-6,
+
+        "x_size": 2.0e-7,
+        "y_size": 1.0e-6
     },
     {
         "name": "right_current",
         "contact_type": "current",
-        "location": "right_edge"
+
+        "x": 4.8e-6,
+        "y": 2.0e-6,
+
+        "x_size": 2.0e-7,
+        "y_size": 1.0e-6
+    },
+        {
+        "name": "left_voltage",
+        "contact_type": "voltage",
+
+        "x": 2.4e-6,
+        "y": 2.0e-6,
+
+        "x_size": 2.0e-7,
+        "y_size": 2.0e-7
     }
 ]
 }
