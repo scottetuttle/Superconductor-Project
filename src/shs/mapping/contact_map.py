@@ -29,6 +29,9 @@ class ContactMap:
 
     contact_masks: dict[str, np.ndarray]
 
+    contact_types: dict[str, str]
+
+
 
 def build_contact_map(
     geometry: Geometry,
@@ -36,50 +39,59 @@ def build_contact_map(
 ) -> ContactMap:
     """
     Build mesh masks for every contact.
-
-    Parameters
-    ----------
-    geometry
-        Device geometry.
-
-    mesh
-        Numerical mesh.
-
-    Returns
-    -------
-    ContactMap
     """
 
-    shape = (mesh.ny, mesh.nx)
+    shape = (
+        mesh.ny,
+        mesh.nx
+    )
+
 
     contact_masks = {}
 
+    contact_types = {}
+
+
+    X, Y = np.meshgrid(
+        mesh.x,
+        mesh.y
+    )
+
+
     for contact in geometry.contacts:
 
-        mask = np.zeros(shape, dtype=bool)
-
-        x0 = contact.x
-        x1 = contact.x + contact.x_size
-        y0 = contact.y
-        y1 = contact.y + contact.y_size
-
-        X, Y = np.meshgrid(
-            mesh.x,
-            mesh.y
-        )
 
         mask = (
-            (X >= x0)
+            (X >= contact.x)
             &
-            (X <= x1)
+            (X <= contact.x + contact.x_size)
+
             &
-            (Y >= y0)
+
+            (Y >= contact.y)
             &
-            (Y <= y1)
+            (Y <= contact.y + contact.y_size)
         )
+
+
+        if not np.any(mask):
+            raise ValueError(
+                f"Contact {contact.name} contains no mesh cells."
+            )
+
 
         contact_masks[contact.name] = mask
 
+
+        contact_types[contact.name] = (
+            contact.contact_type
+        )
+
+
     return ContactMap(
-        contact_masks=contact_masks
+
+        contact_masks=contact_masks,
+
+        contact_types=contact_types
+
     )

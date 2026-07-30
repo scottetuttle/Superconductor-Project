@@ -37,6 +37,7 @@ class MaterialMap:
     thermal_conductivity: np.ndarray
     heat_capacity: np.ndarray
     normal_resistivity: np.ndarray
+    electrical_conductivity: np.ndarray
 
     thickness: np.ndarray
 
@@ -86,6 +87,11 @@ def build_material_map(
         material.normal_resistivity,
         dtype=float
     )
+    electrical_conductivity = np.full(
+        shape,
+        1.0 / material.normal_resistivity,
+        dtype=float,
+    )
 
     thickness = np.full(
         shape,
@@ -116,9 +122,13 @@ def build_material_map(
         materials={
             0: material
         },
+
         thermal_conductivity=thermal_conductivity,
         heat_capacity=heat_capacity,
+        
         normal_resistivity=normal_resistivity,
+        electrical_conductivity=electrical_conductivity,
+
         thickness=thickness,
         Tc=Tc,
         coherence_length=coherence_length,

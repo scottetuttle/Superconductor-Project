@@ -39,6 +39,7 @@ def validate_simulation(simulation):
         material_map.thermal_conductivity,
         material_map.heat_capacity,
         material_map.normal_resistivity,
+        material_map.electrical_conductivity,
         material_map.thickness,
         material_map.Tc,
         material_map.coherence_length,
@@ -77,7 +78,7 @@ def validate_simulation(simulation):
         simulation.fields.current_density_y,
 
         simulation.fields.heat_source,
-]
+    ]
 
     for array in field_arrays:
 
@@ -85,7 +86,7 @@ def validate_simulation(simulation):
 
             raise ValueError(
                 "Field shape does not match mesh."
-        )
+            )
 
     # ---------- Boundaries ----------
 

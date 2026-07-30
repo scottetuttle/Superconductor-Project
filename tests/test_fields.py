@@ -27,3 +27,32 @@ def test_create_fields():
     )
 
     assert fields.temperature[0,0] == 3.0
+
+def test_electromagnetic_fields():
+
+    geometry = load_geometry(
+        "configs/geometry/NbN_film.json"
+    )
+
+    mesh = create_mesh(geometry)
+
+    fields = Fields.create(
+        mesh,
+        initial_temperature=3.0
+    )
+
+
+    assert fields.electric_field_x.shape == (
+        mesh.ny,
+        mesh.nx
+    )
+
+    assert fields.current_density_x.shape == (
+        mesh.ny,
+        mesh.nx
+    )
+
+    assert fields.magnetic_field_x.shape == (
+        mesh.ny,
+        mesh.nx
+    )

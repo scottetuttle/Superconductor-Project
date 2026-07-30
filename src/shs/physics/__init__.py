@@ -14,7 +14,7 @@ Numerical solution is handled separately in shs.solvers.
 
 from .fields import Fields
 from .thermal import ThermalModel
-
+from .electromagnetics import ElectromagneticModel
 
 __all__ = [
     "Fields",

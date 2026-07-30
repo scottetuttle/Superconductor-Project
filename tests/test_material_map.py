@@ -129,3 +129,34 @@ def test_all_cells_are_material_zero():
     assert np.all(
         material_map.material_ids == 0
     )
+
+
+def test_conductivity_map():
+
+    geometry = load_geometry(
+        "configs/geometry/NbN_film.json"
+    )
+
+    mesh = create_mesh(geometry)
+
+    region_map = build_region_map(
+        geometry,
+        mesh,
+    )
+
+    material = get_material("NbN")
+
+    material_map = build_material_map(
+        region_map,
+        material,
+    )
+
+    expected = (
+        1.0 /
+        material.normal_resistivity
+    )
+
+    assert np.allclose(
+        material_map.electrical_conductivity,
+        expected,
+    )

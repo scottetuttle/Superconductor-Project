@@ -1,7 +1,12 @@
 """
 SHS Physics Fields
 
-Stores physical quantities defined on the simulation mesh.
+Stores all evolving physical quantities defined on the simulation mesh.
+
+Fields represent simulation state.
+
+Material properties do not belong here.
+They are stored in MaterialMap.
 """
 
 from dataclasses import dataclass
@@ -14,34 +19,47 @@ from shs.geometry.mesh import Mesh
 @dataclass
 class Fields:
     """
-    Container for simulation fields.
+    Container for evolving simulation fields.
 
     All arrays are defined on the simulation mesh.
     """
 
+    # Thermal
+
     temperature: np.ndarray
-
-    voltage: np.ndarray
-
-    current_density_x: np.ndarray
-
-    current_density_y: np.ndarray
 
     heat_source: np.ndarray
 
 
+    # Electrical
+
+    voltage: np.ndarray
+
+    electric_field_x: np.ndarray
+    electric_field_y: np.ndarray
+
+    current_density_x: np.ndarray
+    current_density_y: np.ndarray
+
+
+    # Magnetic
+
+    magnetic_field_x: np.ndarray
+    magnetic_field_y: np.ndarray
+
+    vector_potential_x: np.ndarray
+    vector_potential_y: np.ndarray
+
+
+
     @classmethod
-    def create(cls, mesh: Mesh, initial_temperature: float):
+    def create(
+        cls,
+        mesh: Mesh,
+        initial_temperature: float
+    ):
         """
-        Create empty fields on a mesh.
-
-        Parameters
-        ----------
-        mesh:
-            Simulation mesh.
-
-        initial_temperature:
-            Starting temperature in Kelvin.
+        Create empty simulation fields.
         """
 
         shape = (
@@ -49,17 +67,70 @@ class Fields:
             mesh.nx
         )
 
+
         return cls(
+
+            # Thermal
+
             temperature=np.full(
                 shape,
-                initial_temperature
+                initial_temperature,
+                dtype=float
             ),
 
-            voltage=np.zeros(shape),
+            heat_source=np.zeros(
+                shape,
+                dtype=float
+            ),
 
-            current_density_x=np.zeros(shape),
 
-            current_density_y=np.zeros(shape),
+            # Electrical
 
-            heat_source=np.zeros(shape)
+            voltage=np.zeros(
+                shape,
+                dtype=float
+            ),
+
+            electric_field_x=np.zeros(
+                shape,
+                dtype=float
+            ),
+
+            electric_field_y=np.zeros(
+                shape,
+                dtype=float
+            ),
+
+            current_density_x=np.zeros(
+                shape,
+                dtype=float
+            ),
+
+            current_density_y=np.zeros(
+                shape,
+                dtype=float
+            ),
+
+
+            # Magnetic
+
+            magnetic_field_x=np.zeros(
+                shape,
+                dtype=float
+            ),
+
+            magnetic_field_y=np.zeros(
+                shape,
+                dtype=float
+            ),
+
+            vector_potential_x=np.zeros(
+                shape,
+                dtype=float
+            ),
+
+            vector_potential_y=np.zeros(
+                shape,
+                dtype=float
+            ),
         )
