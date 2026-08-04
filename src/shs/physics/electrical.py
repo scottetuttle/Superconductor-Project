@@ -5,16 +5,11 @@ Defines electrical transport properties.
 
 Current model:
 
-Ohmic transport:
+    J = σE
 
-    J = sigma E
+and Joule heating
 
-where:
-
-    sigma = electrical conductivity
-    J     = current density
-    E     = electric field
-
+    Q = J · E
 
 Future:
 
@@ -25,35 +20,51 @@ Future:
 - TDGL coupling
 """
 
-
 from dataclasses import dataclass
 
+import numpy as np
 
 
 @dataclass
 class ElectricalModel:
     """
-    Electrical transport parameters.
+    Electrical transport model.
     """
-
 
     reference_voltage: float = 1.0
 
-
-    def conductivity(
-        self,
-        resistivity
-    ):
+    def conductivity(self, resistivity):
         """
         Convert resistivity to conductivity.
-
-        sigma = 1/rho
         """
 
-        if resistivity == 0:
+        if np.any(resistivity == 0):
             raise ValueError(
                 "Resistivity cannot be zero."
             )
 
-
         return 1.0 / resistivity
+
+    def joule_heating(
+        self,
+        current_density_x,
+        current_density_y,
+        electric_field_x,
+        electric_field_y,
+    ):
+        """
+        Compute Joule heating.
+
+        Q = J · E
+
+        Returns
+        -------
+        ndarray
+            Volumetric heat generation.
+        """
+
+        return (
+            current_density_x * electric_field_x
+            +
+            current_density_y * electric_field_y
+        )
