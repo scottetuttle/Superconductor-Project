@@ -87,3 +87,13 @@ def test_electrical_transport():
     #
 
     assert updated.heat_source.max() > 0.0
+
+    assert updated.voltage.max() <= 1.0
+
+    assert updated.voltage.min() >= 0.0
+
+
+    assert updated.current_density_x.max() > 0
+
+
+    assert updated.heat_source.max() > 0

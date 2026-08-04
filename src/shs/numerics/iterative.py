@@ -4,16 +4,35 @@ Iterative numerical solvers.
 Current:
 
 - Gauss-Seidel
+- Successive Over Relaxation (SOR)
 
 Future:
 
-- Successive over relaxation
 - Conjugate gradient
 - Multigrid
+- Newton methods
 """
 
 
+from dataclasses import dataclass
+
 import numpy as np
+
+
+
+@dataclass
+class SolverResult:
+    """
+    Result returned by iterative solvers.
+    """
+
+    field: np.ndarray
+
+    iterations: int
+
+    residual: float
+
+    converged: bool
 
 
 
@@ -27,39 +46,35 @@ def gauss_seidel(
     dy,
     tolerance=1e-8,
     max_iterations=10000,
+    omega=1.0,
 ):
     """
     Solve variable coefficient elliptic equation.
 
-    Currently solves:
+    Solves:
 
-        ∇ · (σ ∇V)=source
+        ∇ · (σ ∇V) = source
 
-    using Gauss-Seidel iteration.
 
     Parameters
     ----------
 
-    solution:
-        Initial guess array.
+    omega:
+        Relaxation factor.
 
-    coefficient:
-        Spatial coefficient σ.
+        omega = 1.0:
+            Gauss-Seidel
 
-    source:
-        Right hand side.
-
-    boundary_mask:
-        Boolean array marking fixed cells.
-
-    boundary_values:
-        Values applied at boundaries.
+        1 < omega < 2:
+            SOR
 
     """
 
     V = solution.copy()
 
-# Apply initial boundary conditions
+
+    # Apply initial boundaries
+
     V[boundary_mask] = boundary_values[boundary_mask]
 
 
@@ -67,8 +82,10 @@ def gauss_seidel(
     dy2 = dy**2
 
 
+    residual = np.inf
 
-    for iteration in range(max_iterations):
+
+    for iteration in range(1, max_iterations + 1):
 
         old = V.copy()
 
@@ -78,10 +95,9 @@ def gauss_seidel(
             for x in range(1, V.shape[1]-1):
 
 
-                if boundary_mask[y,x]:
-                    V[y,x] = boundary_values[y,x]
-                    continue
+                if boundary_mask[y, x]:
 
+                    continue
 
 
                 sigma_e = (
@@ -157,27 +173,59 @@ def gauss_seidel(
                 )
 
 
-                V[y,x] = (
+                new_value = (
                     numerator /
                     denominator
                 )
 
 
+                #
+                # SOR correction
+                #
 
-# Reapply boundary conditions
-        V[boundary_mask] = boundary_values[boundary_mask]
+                V[y,x] = (
+
+                    V[y,x]
+                    +
+                    omega *
+                    (
+                        new_value
+                        -
+                        V[y,x]
+                    )
+
+                )
 
 
-        error = np.max(
+        #
+        # Enforce boundaries
+        #
+
+        V[boundary_mask] = (
+            boundary_values[boundary_mask]
+        )
+
+
+        residual = np.max(
             np.abs(
-                V-old
+                V - old
+            )
+        )
+
+
+        if residual < tolerance:
+
+            return SolverResult(
+                field=V,
+                iterations=iteration,
+                residual=residual,
+                converged=True,
+            )
+
+
+    return SolverResult(
+        field=V,
+        iterations=max_iterations,
+        residual=residual,
+        converged=False,
     )
-)
-
-
-        if error < tolerance:
-            break
-
-
-
-    return V

@@ -92,4 +92,8 @@ def test_gauss_seidel():
     )
 
 
-    assert result[:,0].mean() == 1
+    assert result.field[:,0].mean() == 1
+
+    assert result.converged
+
+    assert result.iterations > 0
