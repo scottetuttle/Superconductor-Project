@@ -5,18 +5,15 @@ Solves:
 
     ∇ · (σ ∇V) = 0
 
-where:
-
-    σ = electrical conductivity
-    V = electric potential
-
-Then calculates:
+then calculates:
 
     E = -∇V
 
     J = σE
 
-    Q = J · E
+
+Uses iterative numerical solvers
+through the SHS numerics layer.
 """
 
 
@@ -24,15 +21,12 @@ import numpy as np
 
 
 from shs.physics import Fields
-from shs.physics.electrical import ElectricalModel
-
-from shs.numerics import (
-    gradient,
-    gauss_seidel,
-)
 
 from shs.mapping.contact_map import ContactMap
+
 from shs.mapping.material_map import MaterialMap
+
+from shs.numerics import red_black_sor
 
 
 
@@ -45,36 +39,24 @@ def electrical_step(
     voltage_right: float = 0.0,
 ):
     """
-    Solve electrical transport.
+    Perform one electrical transport solve.
 
-    Uses:
+    Steps:
 
-        ∇ · (σ∇V)=0
+    1. Build voltage boundary conditions
+    2. Solve conductivity PDE
+    3. Calculate electric field
+    4. Calculate current density
 
     """
 
-    #
-    # Initial voltage guess
-    #
 
     V = fields.voltage.copy()
 
 
     #
-    # Build voltage boundary arrays
+    # Contact masks
     #
-
-    boundary_mask = np.zeros_like(
-        V,
-        dtype=bool
-    )
-
-
-    boundary_values = np.zeros_like(
-        V,
-        dtype=float
-    )
-
 
     left = contact_map.contact_masks.get(
         "left_current"
@@ -86,33 +68,55 @@ def electrical_step(
 
 
     if left is None or right is None:
+
         raise ValueError(
             "Current contacts missing."
         )
 
 
-    boundary_mask[left] = True
-    boundary_values[left] = voltage_left
+
+    #
+    # Boundary conditions
+    #
+
+    boundary_mask = (
+        left |
+        right
+    )
 
 
-    boundary_mask[right] = True
-    boundary_values[right] = voltage_right
+    boundary_values = np.zeros_like(
+        V
+    )
+
+
+    boundary_values[left] = (
+        voltage_left
+    )
+
+    boundary_values[right] = (
+        voltage_right
+    )
 
 
 
     #
-    # Conductivity map
+    # Electrical conductivity
     #
 
-    sigma = material_map.electrical_conductivity
+    sigma = (
+        material_map.electrical_conductivity
+    )
 
 
 
     #
-    # Solve potential equation
+    # Solve:
+    #
+    # ∇ · σ∇V = 0
     #
 
-    result = gauss_seidel(
+    result = red_black_sor(
         solution=V,
         coefficient=sigma,
         source=np.zeros_like(V),
@@ -120,21 +124,16 @@ def electrical_step(
         boundary_values=boundary_values,
         dx=mesh.dx,
         dy=mesh.dy,
+        tolerance=1e-8,
+        max_iterations=10000,
         omega=1.7,
-)
+    )
 
 
-    V = result.field
 
-    print(
-    f"Electrical solver: "
-    f"{result.iterations} iterations, "
-    f"residual={result.residual:.3e}, "
-    f"converged={result.converged}"
-)
-
-
-    fields.voltage = V
+    fields.voltage = (
+        result.field
+    )
 
 
 
@@ -142,18 +141,36 @@ def electrical_step(
     # Electric field
     #
 
-    Ex, Ey = gradient(
-        V,
-        mesh.dx,
-        mesh.dy,
+    V = fields.voltage
+
+
+    Ex = np.zeros_like(V)
+
+    Ey = np.zeros_like(V)
+
+
+
+    Ex[:,1:-1] = -(
+        V[:,2:]
+        -
+        V[:,:-2]
+    ) / (
+        2 * mesh.dx
     )
 
 
-    Ex = -Ex
-    Ey = -Ey
+    Ey[1:-1,:] = -(
+        V[2:,:]
+        -
+        V[:-2,:]
+    ) / (
+        2 * mesh.dy
+    )
+
 
 
     fields.electric_field_x = Ex
+
     fields.electric_field_y = Ey
 
 
@@ -162,28 +179,56 @@ def electrical_step(
     # Current density
     #
 
-    Jx = sigma * Ex
-    Jy = sigma * Ey
+    fields.current_density_x = (
+        sigma *
+        Ex
+    )
 
 
-    fields.current_density_x = Jx
-    fields.current_density_y = Jy
-
-
-
-    #
+    fields.current_density_y = (
+        sigma *
+        Ey
+    )
+        #
     # Joule heating
     #
+    # Q = J^2 rho
+    #
 
-    electrical_model = ElectricalModel()
-
-
-    fields.heat_source = electrical_model.joule_heating(
-        Jx,
-        Jy,
-        Ex,
-        Ey,
+    J_squared = (
+        fields.current_density_x**2
+        +
+        fields.current_density_y**2
     )
+
+
+    rho = (
+        material_map.normal_resistivity
+    )
+
+
+    fields.heat_source = (
+        J_squared *
+        rho
+    )
+
+
+    #
+    # Store solver information
+    #
+    # Future:
+    # add to SimulationState
+    #
+
+    fields.electrical_solver_iterations = (
+        result.iterations
+    )
+
+
+    fields.electrical_solver_residual = (
+        result.residual
+    )
+
 
 
     return fields

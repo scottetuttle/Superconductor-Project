@@ -13,6 +13,7 @@ from .operators import (
 
 from .iterative import (
     gauss_seidel,
+    red_black_sor,
     SolverResult,
 )
 
@@ -23,4 +24,5 @@ __all__ = [
     "laplacian",
     "gauss_seidel",
     "SolverResult",
+    "red_black_sor",
 ]

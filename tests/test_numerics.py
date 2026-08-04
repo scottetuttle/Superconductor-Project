@@ -6,6 +6,8 @@ from shs.numerics import (
     gauss_seidel,
 )
 
+from shs.numerics import red_black_sor
+
 
 
 def test_gradient():
@@ -97,3 +99,41 @@ def test_gauss_seidel():
     assert result.converged
 
     assert result.iterations > 0
+
+
+def test_red_black_sor():
+
+    shape = (20,20)
+
+    V = np.zeros(shape)
+
+    sigma = np.ones(shape)
+
+    source = np.zeros(shape)
+
+    boundaries = np.zeros(
+        shape,
+        dtype=bool
+    )
+
+    values = np.zeros(shape)
+
+
+    boundaries[:,0] = True
+    values[:,0] = 1
+
+
+    result = red_black_sor(
+        V,
+        sigma,
+        source,
+        boundaries,
+        values,
+        1,
+        1,
+    )
+
+
+    assert result.converged
+
+    assert result.field[:,0].mean() == 1
