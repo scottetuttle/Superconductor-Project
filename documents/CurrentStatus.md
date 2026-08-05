@@ -1,943 +1,332 @@
-# SHS Current Development Status
+# SHS Current Status
 
-Project: Superconducting Hotspot Simulator (SHS)
+**Project:** Superconducting Hotspot Simulator (SHS)
 
-Last Updated: July 2026
+**Version:** 2.0
 
----
-
-# Current Development Phase
-
-## Phase: Physics Infrastructure Integration
-
-The SHS project has completed the majority of its foundational simulation infrastructure.
-
-The current focus has shifted from building individual components toward integrating physical models with the complete simulation state.
-
-Current development priority:
-
-Configuration  
-→ Geometry  
-→ Mesh  
-→ Region Mapping  
-→ Material Mapping  
-→ Contact Mapping  
-→ Boundary Conditions  
-→ Simulation State  
-→ Fields  
-→ Physics Models  
-→ Solvers
-
-The goal of this phase is to create a complete numerical environment where thermal, electrical, and superconducting physics can operate on the same simulation state.
+**Last Updated:** August 2026
 
 ---
 
-# Completed Systems
+# Project Status
 
-## Repository Structure
+**Current Phase:** Numerical Infrastructure Complete → Beginning TDGL Infrastructure
 
-Status: COMPLETE
+The SHS project has completed its foundational software architecture and its first fully coupled multiphysics system.
 
-Implemented:
+The simulator is now capable of solving coupled electrical and thermal transport problems on arbitrary device geometries using reusable numerical infrastructure.
 
-- Modular repository organization
-- Source/documentation separation
-- Configuration directories
-- Simulation directories
-- Testing framework
-- Independent physics modules
-
-Current project organization separates:
-
-- geometry
-- materials
-- mapping
-- boundaries
-- optics
-- physics
-- solvers
-- visualization
-- configurations
-- documentation
-- tests
+The next major milestone is the implementation of a research-grade **Time-Dependent Ginzburg-Landau (TDGL)** framework, which will become the central superconducting model used throughout SHS.
 
 ---
 
-# Materials System
+# Overall Progress
 
-Status: COMPLETE (Initial Implementation)
-
-Implemented:
-
-- Material dataclass
-- Material property definitions
-- Material database
-- JSON material loading
-- Material validation tests
-
-Supported material properties:
-
-- material name
-- critical temperature
-- thickness
-- thermal conductivity
-- heat capacity
-- electrical resistivity
-- coherence length
-- penetration depth
-
-Current supported materials:
-
-- NbN
-- Aluminum
-- YBCO
-
-Future expansion:
-
-- temperature-dependent properties
-- magnetic-field-dependent properties
-- experimental datasets
-- literature-backed material models
+| System                        | Status       |
+| ----------------------------- | ------------ |
+| Repository Architecture       | ✅ Complete   |
+| Configuration System          | ✅ Complete   |
+| Geometry System               | ✅ Complete   |
+| Mesh Generation               | ✅ Complete   |
+| Material Database             | ✅ Complete   |
+| Region Mapping                | ✅ Complete   |
+| Material Mapping              | ✅ Complete   |
+| Contact Mapping               | ✅ Complete   |
+| Boundary Conditions           | ✅ Complete   |
+| Simulation Builder            | ✅ Complete   |
+| Simulation Validation         | ✅ Complete   |
+| Field Infrastructure          | ✅ Complete   |
+| Thermal Physics               | ✅ Complete   |
+| Thermal Solver                | ✅ Complete   |
+| Electrical Physics            | ✅ Complete   |
+| Electrical PDE Solver         | ✅ Complete   |
+| Joule Heating                 | ✅ Complete   |
+| Coupled Electrothermal Solver | ✅ Complete   |
+| Numerical Operator Library    | ✅ Complete   |
+| Iterative Solver Framework    | ✅ Complete   |
+| Red-Black SOR Solver          | ✅ Complete   |
+| TDGL Infrastructure           | 🚧 Beginning |
+| Electromagnetic Coupling      | ⏳ Planned    |
+| Vortex Physics                | ⏳ Planned    |
+| Optical Physics               | ⏳ Planned    |
 
 ---
 
-# Geometry System
+# Current Capabilities
 
-Status: COMPLETE (Foundation)
+SHS currently supports:
 
-Implemented:
+## Device Representation
 
-- RectangularFilm dataclass
-- Geometry container
-- JSON geometry configuration
-- Region loading
-- Contact loading
-- Voltage probe loading
-
-Current geometry structure:
-
-
-Geometry
-
-|
-+-- film
-|   |
-|   +-- RectangularFilm
-|
-+-- regions
-|
-+-- contacts
-|
-+-- voltage probes
-
-
-Design decision:
-
-Geometry represents physical device structure only.
-
-Geometry does not contain:
-
-- physics equations
-- material calculations
-- solver logic
-
-This preserves modularity and allows future expansion to:
-
-- multilayer devices
-- patterned superconductors
-- defects
-- substrates
-- arbitrary geometries
+* JSON-driven geometries
+* Rectangular superconducting films
+* Contacts
+* Voltage probes
+* Structured meshes
+* Spatial region mapping
+* Material assignment
+* Boundary conditions
 
 ---
 
-# Mesh System
+## Material Infrastructure
 
-Status: COMPLETE (Foundation)
+Material properties currently include:
 
-Implemented:
+* thermal conductivity
+* heat capacity
+* electrical resistivity
+* electrical conductivity
+* thickness
+* critical temperature
+* coherence length
+* penetration depth
 
-- Geometry-based mesh generation
-- Rectangular numerical grid
-- Spatial discretization
-- Correct dx/dy calculation
-
-Current mesh supports:
-
-- nx resolution
-- ny resolution
-- x coordinates
-- y coordinates
-- spatial step sizes
-
-Future expansion:
-
-- adaptive refinement
-- multilayer meshes
-- nonuniform grids
+Material properties are spatially mapped through `MaterialMap`, allowing future heterogeneous devices without redesigning the solver architecture.
 
 ---
 
-# Region Mapping System
+## Simulation State
 
-Status: COMPLETE (Initial Implementation)
+The simulation state is fully unified.
 
-Implemented:
+Current components include:
 
-- RegionMap dataclass
-- Geometry-to-mesh conversion
-- Region ID arrays
-- Region name metadata
-- Region type metadata
+* configuration
+* geometry
+* mesh
+* region map
+* material map
+* contact map
+* boundary conditions
+* evolving physical fields
 
-Current implementation:
-
-All mesh cells currently belong to the superconducting film region.
-
-Example:
-
-
-region_ids
-
-[
-[0,0,0],
-[0,0,0],
-[0,0,0]
-]
-
-
-Region metadata:
-
-0:
-
-name:
-film
-
-type:
-superconductor
-
-
-Future expansion:
-
-- substrates
-- insulating layers
-- contacts
-- defects
-- oxide layers
-- patterned regions
+All physics modules operate directly on the same simulation object.
 
 ---
-
-# Material Mapping System
-
-Status: COMPLETE (Initial Implementation)
-
-Implemented:
-
-- MaterialMap dataclass
-- RegionMap → MaterialMap conversion
-- Spatial property arrays
-- Material ID tracking
-
-Current mapped properties:
-
-- thermal conductivity
-- heat capacity
-- normal resistivity
-- thickness
-- critical temperature
-- coherence length
-- penetration depth
-
-Current implementation:
-
-Entire superconducting film is assigned a single material.
-
-Example:
-
-Material ID:
-
-0 → NbN
-
-
-Future expansion:
-
-- multiple materials
-- substrate coupling
-- contact materials
-- spatial defects
-- temperature-dependent material properties
-
----
-
-# Contact Mapping System
-
-Status: COMPLETE (Initial Implementation)
-
-Implemented:
-
-- ContactMap dataclass
-- Geometry contact conversion into mesh masks
-- Boolean contact arrays
-- Arbitrary rectangular contacts
-
-Current contact representation:
-
-
-contact_masks
-
-left_current:
-
-[
-False False True
-False False True
-]
-
-
-Current supported contact information:
-
-- contact name
-- contact type
-- x position
-- y position
-- x size
-- y size
-
-
-Current device example:
-
-- left current contact
-- right current contact
-- voltage probe contact
-
-
-Future expansion:
-
-- current injection models
-- contact resistance
-- superconducting leads
-- complex contact geometries
-
----
-
-# Boundary Condition System
-
-Status: COMPLETE (Foundation)
-
-Implemented:
-
-- BoundaryCondition dataclass
-- BoundarySet container
-- BoundarySide definitions
-- BoundaryType definitions
-- JSON boundary loading
-
-Supported boundary types:
-
-- fixed temperature
-- insulating
-- heat transfer
-- heat flux
-
-Example:
-
-left:
-
-fixed_temperature
-
-4.2 K
-
-
-right:
-
-fixed_temperature
-
-4.2 K
-
-
-top/bottom:
-
-insulating
-
-
-Future expansion:
-
-- helium cooling models
-- vacuum chamber boundaries
-- radiative losses
-- substrate thermal coupling
-- temperature-dependent interfaces
-
----
-
-# Fields System
-
-Status: COMPLETE (Expanded Foundation)
-
-Implemented:
-
-Simulation state storage for evolving quantities.
-
-Current fields include:
-
-
-Thermal:
-
-- temperature
-- heat source
-
-
-Electrical:
-
-- voltage
-- electric field x/y
-- current density x/y
-
-
-Magnetic:
-
-- magnetic field x/y
-- vector potential x/y
-
-
-Design decision:
-
-Fields contain evolving simulation quantities only.
-
-Material properties remain stored in MaterialMap.
-
----
-
-# Simulation Configuration System
-
-Status: COMPLETE
-
-Implemented:
-
-- SimulationConfig dataclass
-- JSON simulation loading
-- Boundary parsing
-- Simulation parameter handling
-
-Current configuration supports:
-
-- geometry selection
-- material selection
-- initial temperature
-- applied current
-- simulation duration
-- timestep
-- boundary conditions
-
----
-
-# Simulation Builder
-
-Status: COMPLETE (Initial Implementation)
-
-Implemented:
-
-Complete simulation construction pipeline.
-
-Automatically initializes:
-
-- configuration
-- geometry
-- mesh
-- region map
-- material map
-- boundary conditions
-
-
-Current workflow:
-
-
-Simulation JSON
-
-    |
-
-    v
-
-Simulation Builder
-
-    |
-
-    v
-
-Complete Simulation Object
-
-
-Future expansion:
-
-- field initialization
-- solver initialization
-- experiments
-- parameter sweeps
-- automated validation
-
----
-
-# Simulation Validation Layer
-
-Status: COMPLETE
-
-Implemented:
-
-Simulation consistency checking.
-
-Validation checks:
-
-Geometry:
-
-- mesh consistency
-
-Region Mapping:
-
-- region dimensions
-
-Material Mapping:
-
-- material array dimensions
-- valid material IDs
-
-Boundary Conditions:
-
-- valid boundary existence
-
-
-Current usage:
-
-
-simulation.validate()
-
-
-Purpose:
-
-Prevent solvers from running with invalid simulation states.
-
----
-
-# Thermal Physics System
-
-Status: COMPLETE (Initial Model)
-
-Implemented:
-
-Thermal physics architecture.
-
-Current model includes:
-
-- thermal diffusion
-- heat sources
-- bath relaxation
-
-
-Implemented equation:
-
-
-C dT/dt = ∇ · (k∇T) + Q - G(T-Tbath)
-
-
-Current ThermalModel supports:
-
-- thermal conductivity
-- heat capacity
-- bath temperature
-- thermal relaxation rate
-
-
-Future expansion:
-
-- MaterialMap coupling
-- temperature-dependent conductivity
-- nonlinear thermal models
-- electron-phonon coupling
-
----
-
-# Thermal Solver
-
-Status: COMPLETE (Initial Solver)
-
-Implemented:
-
-- Explicit thermal time stepping
-- Heat diffusion
-- Heat source coupling
-- Thermal relaxation
-
-
-Validated behavior:
-
-- Hotspots diffuse
-- Uniform temperatures remain stable
-- Heat sources increase temperature
-- Systems cool toward bath temperature
-
-
-Future work:
-
-- integrate BoundarySet directly
-- use spatial MaterialMap properties
-- support nonuniform materials
-
----
-
-# Electrical Physics System
-
-Status: IN DEVELOPMENT
-
-Current progress:
-
-Architecture created for:
-
-- electric potential
-- electric fields
-- current density
-- conductivity-based transport
-
-
-Material infrastructure now supports electrical properties.
-
-Planned model:
-
-
-J = σE
-
-
-where:
-
-σ = electrical conductivity
-
-E = electric field
-
-
-Future coupling:
-
-- Joule heating
-
-Q = J²ρ
-
-
-- resistive transitions
-- superconducting current transport
-
----
-
-# Electromagnetic Physics System
-
-Status: ARCHITECTURE COMPLETE
-
-Implemented:
-
-Electromagnetic module documentation and field support.
-
-Planned capabilities:
-
-- electric potential solving
-- current conservation
-- magnetic field calculation
-- vector potential coupling
-- TDGL gauge coupling
-
-
-Future equations:
-
-
-∇ · J = 0
-
-
-E = -∇V - ∂A/∂t
-
-
-∇ × B = μ₀J
-
-
----
-
-# Testing Status
-
-Status: PASSING
-
-Current tests validate:
-
-## Materials
-
-- material loading
-- material properties
-
-## Geometry
-
-- geometry loading
-- regions
-- contacts
-- voltage probes
-
-## Mesh
-
-- mesh generation
-- spatial dimensions
-
-## Mapping
-
-- region maps
-- material maps
-- contact maps
-
-## Boundaries
-
-- boundary creation
-- JSON loading
-- boundary types
-
-## Simulation
-
-- simulation construction
-- validation
-
-## Thermal
-
-- diffusion
-- hotspot heating
-- cooling
-- equilibrium behavior
 
 ## Fields
 
-- field creation
-- electrical field storage
-- magnetic field storage
+Current evolving fields include:
 
+### Thermal
 
-All current tests are passing.
+* temperature
+* heat source
 
----
+### Electrical
 
-# Current Architecture Decisions
+* voltage
+* electric field
+* current density
 
-## Configuration Driven Design
+### Magnetic (Infrastructure)
 
-Physical parameters are stored in JSON configuration files.
+* magnetic field
+* vector potential
 
-Preferred flow:
-
-
-Configuration
-
-    |
-
-    v
-
-Python Data Objects
-
-    |
-
-    v
-
-Simulation State
-
-    |
-
-    v
-
-Physics Solvers
-
-
-Avoid hard-coded device parameters.
+These fields provide the shared state required for future multiphysics coupling.
 
 ---
 
-## Separation of Physical Layers
+# Numerical Infrastructure
 
-Decision:
+A reusable numerical framework has been established.
 
-Different physical systems remain separated.
+Current capabilities include:
 
-Geometry:
+## Differential Operators
 
-defines structure
+* gradient
+* divergence
+* Laplacian
 
-RegionMap:
-
-defines occupancy
-
-MaterialMap:
-
-defines properties
-
-Fields:
-
-stores evolving values
-
-Solvers:
-
-update fields
-
-
-This architecture allows advanced physics to be added without redesigning the simulation framework.
+These operators are independent of any specific physical model.
 
 ---
 
-# Current Development Task
+## Iterative Solvers
 
-## Electrical Transport Integration
+Implemented:
 
-Current focus:
+* Classical Gauss-Seidel
+* Red-Black Successive Over-Relaxation (SOR)
 
-Implement the first electrical solver using the existing simulation infrastructure.
+The Red-Black SOR implementation has become the preferred elliptic PDE solver due to its significantly improved convergence rate.
 
-Goals:
-
-- use conductivity maps
-- calculate electric fields
-- calculate current density
-- apply contact boundary conditions
-- prepare Joule heating coupling
-
+Future numerical methods will be added to the same framework rather than embedded inside individual physics modules.
 
 ---
 
-# Immediate Next Steps
+# Thermal Physics
 
-## Step 1
+Implemented equation:
 
-Add electrical conductivity maps.
+[
+C\frac{\partial T}{\partial t}
+==============================
 
-Requirements:
+\nabla\cdot(k\nabla T)
++
+Q
+-
 
-- conductivity stored in MaterialMap
-- conversion from resistivity
-- validation tests
+G(T-T_{\mathrm{bath}})
+]
 
----
+Current capabilities include:
 
-## Step 2
+* thermal diffusion
+* external heating
+* bath relaxation
+* spatial material properties
 
-Implement electrical physics model.
-
-Initial goal:
-
-Solve:
-
-J = σE
-
-
-with:
-
-- voltage fields
-- conductivity maps
-- contact definitions
+The thermal solver operates directly on the complete simulation state.
 
 ---
 
-## Step 3
+# Electrical Physics
 
-Implement electrical solver.
+Current implementation solves the electrostatic transport equation:
 
-Target:
+[
+\nabla\cdot(\sigma\nabla V)=0
+]
 
-- voltage distribution
-- current density distribution
-- current conservation checks
+using:
 
----
+* conductivity maps
+* voltage boundary conditions
+* reusable elliptic PDE solvers
 
-## Step 4
+Computed quantities include:
 
-Couple electrical heating into thermal solver.
-
-Add:
-
-
-Q = J²ρ
-
-
-as a dynamic heat source.
-
+* voltage
+* electric field
+* current density
 
 ---
 
-# Future Development Order
+# Electrothermal Coupling
 
-## Phase 1: Device Representation
+Electrical and thermal transport are now dynamically coupled.
 
-Complete:
+Current Joule heating model:
 
-- geometry
-- regions
-- contacts
-- voltage probes
-- mesh mapping
-- validation
+[
+Q
+=
 
----
+\rho
+|\mathbf{J}|^2
+]
 
-## Phase 2: Thermal-Electrical Coupling
+The electrical solver computes heat generation, which is immediately consumed by the thermal solver during each coupled timestep.
 
-Implement:
-
-- conductivity maps
-- electrical solver
-- Joule heating
-- coupled electrothermal simulations
+This represents the first complete multiphysics capability of SHS.
 
 ---
 
-## Phase 3: Optical System
+# Validation Status
 
-Implement:
+All current automated tests are passing.
 
-- Gaussian hotspots
-- laser profiles
-- pulsed heating
-- moving hotspots
+Validation currently covers:
 
----
-
-## Phase 4: Superconducting Physics
-
-Implement:
-
-- Time Dependent Ginzburg-Landau equations
-- order parameter evolution
-- phase gradients
-- critical current behavior
-
----
-
-## Phase 5: Advanced Physics
-
-Future additions:
-
-- vortex dynamics
-- magnetic field coupling
-- Josephson junctions
-- SQUID systems
-- multilayer devices
-- optimization methods
+* geometry loading
+* material loading
+* mesh generation
+* region mapping
+* material mapping
+* contact mapping
+* boundary conditions
+* simulation construction
+* thermal diffusion
+* electrical transport
+* Joule heating
+* coupled electrothermal evolution
+* numerical operators
+* iterative solvers
 
 ---
 
-# Current Project Health
+# Architecture Status
 
-Status:
+The software architecture is considered stable.
 
-FOUNDATION SYSTEM COMPLETE
+Major design principles currently in use:
 
-The SHS project has successfully transitioned from isolated component development into integrated simulation architecture.
+* configuration-driven simulations
+* modular physics layers
+* reusable numerical infrastructure
+* shared simulation state
+* separation of physics and numerics
 
-Current implementation includes:
+No major architectural redesigns are anticipated before TDGL development.
 
-- working material system
-- working geometry system
-- working mesh generation
-- working region mapping
-- working material mapping
-- working contact mapping
-- working boundary system
-- working simulation builder
-- working validation layer
-- expanded field infrastructure
-- working thermal simulation foundation
+---
 
-The next major milestone is implementing coupled electrical and thermal transport before introducing full superconducting physics such as TDGL and vortex dynamics.
+# Performance Status
+
+The original electrical solver relied on a classical Gauss-Seidel implementation.
+
+Benchmark testing demonstrated that Red-Black SOR reduced solve times dramatically while maintaining numerical agreement.
+
+Typical benchmark results:
+
+* Gauss-Seidel: ~10,500 iterations (~180 seconds)
+* Red-Black SOR: ~2,150 iterations (~1 second)
+
+Future performance improvements will focus on improved numerical algorithms rather than low-level optimization.
+
+---
+
+# Current Development Focus
+
+The project is now transitioning from classical electrothermal transport toward superconducting physics.
+
+The immediate objective is implementing the infrastructure required for a complete Time-Dependent Ginzburg-Landau (TDGL) solver.
+
+Current work will focus on:
+
+* complex order parameter fields
+* Ginzburg-Landau material parameters
+* gauge-covariant differential operators
+* TDGL boundary conditions
+* nonlinear TDGL time integration
+* benchmark validation against published literature
+
+This infrastructure will become the foundation for all subsequent superconducting physics within SHS.
+
+---
+
+# Near-Term Development Goals
+
+The next development milestones are:
+
+1. Introduce the complex superconducting order parameter field.
+2. Expand the material system with Ginzburg-Landau parameters.
+3. Implement gauge-covariant numerical operators.
+4. Develop a stable TDGL time integration framework.
+5. Validate the TDGL implementation using established benchmark problems.
+6. Couple TDGL to the existing electrothermal simulation framework.
+
+---
+
+# Long-Term Direction
+
+The long-term objective remains the development of a modular research platform capable of simulating superconducting systems across multiple interacting physical domains.
+
+Future capabilities include:
+
+* self-consistent electromagnetic coupling
+* vortex dynamics
+* Josephson junctions
+* SQUIDs
+* superconducting nanowire devices
+* optical excitation
+* nonequilibrium superconductivity
+* advanced superconducting materials
+* publication-grade scientific validation
+
+The current software architecture has been designed specifically to support these future additions without requiring major structural changes.
