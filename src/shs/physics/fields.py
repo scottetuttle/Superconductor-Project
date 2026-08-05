@@ -50,6 +50,10 @@ class Fields:
     vector_potential_x: np.ndarray
     vector_potential_y: np.ndarray
 
+    #tdgl
+
+    psi: np.ndarray
+
 
 
     @classmethod
@@ -132,5 +136,12 @@ class Fields:
             vector_potential_y=np.zeros(
                 shape,
                 dtype=float
+            ),
+
+            #tdgl
+
+            psi=np.ones(
+                shape,
+                dtype=complex
             ),
         )

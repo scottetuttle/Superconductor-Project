@@ -1,6 +1,8 @@
 from shs.geometry import load_geometry, create_mesh
 from shs.physics import Fields
 
+import numpy as np
+
 
 def test_create_fields():
 
@@ -27,6 +29,38 @@ def test_create_fields():
     )
 
     assert fields.temperature[0,0] == 3.0
+
+
+    # Superconducting order parameter
+
+    assert fields.psi.shape == (
+        mesh.ny,
+        mesh.nx
+    )
+
+    assert np.iscomplexobj(
+        fields.psi
+    )
+
+
+    # Initial superconducting state:
+    #
+    # psi = 1 + 0i
+    #
+    # amplitude = 1
+    # phase = 0
+
+    assert np.allclose(
+        np.abs(fields.psi),
+        1.0
+    )
+
+    assert np.allclose(
+        np.angle(fields.psi),
+        0.0
+    )
+
+
 
 def test_electromagnetic_fields():
 
