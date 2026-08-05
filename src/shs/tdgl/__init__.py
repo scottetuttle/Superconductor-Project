@@ -10,8 +10,10 @@ from .model import(
     TDGLModel
 )
 
-from .operators import(
-    gradient
+from .operators import (
+    gradient,
+    covariant_gradient,
+    covariant_laplacian,
 )
 
 __all__ = [
@@ -19,4 +21,6 @@ __all__ = [
     "TDGLParameters",
     "TDGLModel",
     "gradient",
+    "covariant_gradient",
+    "covariant_laplacian",
 ]

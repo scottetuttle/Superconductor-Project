@@ -13,3 +13,5 @@ from .coupled_solver import (
     run_coupled_simulation,
     CoupledSolverResult,
 )
+
+from .tdgl_solver import tdgl_step
