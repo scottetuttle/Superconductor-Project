@@ -90,12 +90,26 @@ def tdgl_step(
 
 
 
+    #
+# Dimensionless spatial scaling
+#
+
+#
+# Dimensionless TDGL scaling
+#
+# Current implementation assumes
+# uniform material properties.
+#
+
+    xi = material_map.materials[0].coherence_length
+
+
     kinetic_term = covariant_laplacian(
         psi,
         Ax,
         Ay,
-        mesh.dx,
-        mesh.dy,
+        mesh.dx / xi,
+        mesh.dy / xi,
     )
 
 
@@ -103,23 +117,29 @@ def tdgl_step(
     #
     # Ginzburg-Landau potential
     #
+    alpha = (
+        material_map.gl_alpha
+        *
+        (
+            1 -
+            reduced_temperature
+        )
+    )
+
+
+    beta = material_map.gl_beta
+
 
     potential_term = (
 
-        (
-            1.0 -
-            reduced_temperature
-        )
-        *
+        alpha *
         psi
 
         -
 
-        (
-            np.abs(psi)**2
-            *
-            psi
-        )
+        beta *
+        np.abs(psi)**2 *
+        psi
 
     )
 
@@ -135,7 +155,7 @@ def tdgl_step(
         +
         potential_term
 
-    ) / tdgl_model.parameters.u
+    ) / material_map.tdgl_u
 
 
 
@@ -149,6 +169,26 @@ def tdgl_step(
         dt *
         dpsi_dt
     )
+    #
+    # Numerical stability limiter
+    #
 
+    max_amplitude = 10.0
+
+
+    amplitude = np.abs(
+        fields.psi
+    )
+
+
+    mask = amplitude > max_amplitude
+
+
+    if np.any(mask):
+
+        fields.psi[mask] *= (
+            max_amplitude /
+            amplitude[mask]
+        )
 
     return fields

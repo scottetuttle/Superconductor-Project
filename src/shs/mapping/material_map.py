@@ -44,6 +44,9 @@ class MaterialMap:
     Tc: np.ndarray
     coherence_length: np.ndarray
     penetration_depth: np.ndarray
+    gl_alpha: np.ndarray
+    gl_beta: np.ndarray
+    tdgl_u: np.ndarray
 
 
 def build_material_map(
@@ -116,6 +119,25 @@ def build_material_map(
         material.penetration_depth,
         dtype=float
     )
+    gl_alpha = np.full(
+        shape,
+        material.gl_alpha,
+        dtype=float,
+    )
+
+
+    gl_beta = np.full(
+        shape,
+        material.gl_beta,
+        dtype=float,
+    )
+
+
+    tdgl_u = np.full(
+        shape,
+        material.tdgl_u,
+        dtype=float,
+    )
 
     return MaterialMap(
         material_ids=material_ids,
@@ -133,4 +155,10 @@ def build_material_map(
         Tc=Tc,
         coherence_length=coherence_length,
         penetration_depth=penetration_depth,
+
+        gl_alpha=gl_alpha,
+
+        gl_beta=gl_beta,
+
+        tdgl_u=tdgl_u,
     )

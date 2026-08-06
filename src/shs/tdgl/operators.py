@@ -65,7 +65,11 @@ def laplacian(
     dy,
 ):
     """
-    Standard Laplacian.
+    Cartesian Laplacian.
+
+    ∇²ψ =
+    d²ψ/dx² +
+    d²ψ/dy²
     """
 
     lap = np.zeros_like(
@@ -76,27 +80,32 @@ def laplacian(
 
     lap[1:-1,1:-1] = (
 
-        psi[2:,1:-1]
-        +
-        psi[:-2,1:-1]
+        (
+            psi[1:-1,2:]
+            -
+            2*psi[1:-1,1:-1]
+            +
+            psi[1:-1,:-2]
+        )
+        /
+        dx**2
 
         +
-        psi[1:-1,2:]
-        +
-        psi[1:-1,:-2]
 
-        -
-        4 *
-        psi[1:-1,1:-1]
+        (
+            psi[2:,1:-1]
+            -
+            2*psi[1:-1,1:-1]
+            +
+            psi[:-2,1:-1]
+        )
+        /
+        dy**2
 
-    ) / (
-        dx * dy
     )
 
 
     return lap
-
-
 
 def covariant_gradient(
     psi,
