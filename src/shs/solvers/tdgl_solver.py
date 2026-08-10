@@ -1,22 +1,24 @@
 """
-TDGL Solver
+TDGL Solver.
 
-Advances the superconducting order parameter.
+Advances the superconducting order parameter using
+the normalized Time-Dependent Ginzburg-Landau equation:
 
-Dimensionless TDGL equation:
-
-dpsi/dt = (1/u) [
-    D^2 psi
-    +
-    (1 - T/Tc) psi
-    -
-    |psi|^2 psi
-]
+    u dpsi/dt =
+        D^2 psi
+        + (1 - T/Tc) psi
+        - |psi|^2 psi
 
 where:
 
-D = nabla - iA
+    D = nabla - i A
 
+The current implementation uses explicit Euler
+time integration.
+
+The TDGL parameter u is supplied by TDGLParameters.
+Material properties provide the physical scales needed
+to construct the dimensionless equation.
 """
 
 import numpy as np
@@ -24,9 +26,7 @@ import numpy as np
 from shs.config.simulation_state import Simulation
 
 from shs.tdgl.model import TDGLModel
-
 from shs.tdgl.operators import covariant_laplacian
-
 
 
 def tdgl_step(
@@ -43,34 +43,50 @@ def tdgl_step(
         Complete SHS simulation state.
 
     dt:
-        Time step.
+        Dimensionless TDGL timestep.
 
     tdgl_model:
-        TDGL parameters.
+        TDGL physical model.
 
     Returns
     -------
     Fields
-        Updated fields.
+        Updated simulation fields.
+
+    Notes
+    -----
+    The normalized TDGL equation is:
+
+        u dpsi/dt =
+            D^2 psi
+            + (1 - T/Tc) psi
+            - |psi|^2 psi
+
+    Spatial coordinates are normalized by the
+    coherence length xi.
     """
 
+    if dt <= 0.0:
+        raise ValueError(
+            "TDGL timestep dt must be positive."
+        )
 
     fields = simulation.fields
-
     material_map = simulation.material_map
-
     mesh = simulation.mesh
-
-
 
     psi = fields.psi.copy()
 
+    #
+    # Validate TDGL parameters.
+    #
 
+    tdgl_model.parameters.validate()
 
     #
-    # Reduced temperature
+    # Reduced temperature.
     #
-    # T/Tc
+    # t = T / Tc
     #
 
     reduced_temperature = (
@@ -78,117 +94,120 @@ def tdgl_step(
         material_map.Tc
     )
 
-
-
     #
-    # Electromagnetic coupling
+    # Electromagnetic vector potential.
     #
 
     Ax = fields.vector_potential_x
-
     Ay = fields.vector_potential_y
 
+    #
+    # Normalize spatial coordinates by coherence length.
+    #
+    # x' = x / xi
+    #
+    # Therefore:
+    #
+    # dx' = dx / xi
+    #
 
+    material = material_map.materials[0]
+
+    xi = material.coherence_length
+
+    if xi <= 0.0:
+        raise ValueError(
+            "Coherence length xi must be positive."
+        )
+
+    dx_dimensionless = (
+        mesh.dx / xi
+    )
+
+    dy_dimensionless = (
+        mesh.dy / xi
+    )
 
     #
-# Dimensionless spatial scaling
-#
-
-#
-# Dimensionless TDGL scaling
-#
-# Current implementation assumes
-# uniform material properties.
-#
-
-    xi = material_map.materials[0].coherence_length
-
+    # Gauge-covariant kinetic term.
+    #
 
     kinetic_term = covariant_laplacian(
         psi,
         Ax,
         Ay,
-        mesh.dx / xi,
-        mesh.dy / xi,
+        dx_dimensionless,
+        dy_dimensionless,
     )
 
+    #
+    # Linear GL contribution.
+    #
+    # (1 - T/Tc) psi
+    #
 
+    linear_term = (
+        1.0 -
+        reduced_temperature
+    ) * psi
 
     #
-    # Ginzburg-Landau potential
+    # Nonlinear GL contribution.
     #
-    alpha = (
-        material_map.gl_alpha
-        *
-        (
-            1 -
-            reduced_temperature
-        )
-    )
+    # |psi|^2 psi
+    #
 
-
-    beta = material_map.gl_beta
-
-
-    potential_term = (
-
-        alpha *
-        psi
-
-        -
-
-        beta *
+    nonlinear_term = (
         np.abs(psi)**2 *
         psi
-
     )
 
+    #
+    # TDGL relaxation parameter.
+    #
+    # This belongs to the dimensionless TDGL model,
+    # not to the spatial material map.
+    #
 
+    u = tdgl_model.parameters.u
 
     #
-    # TDGL evolution
+    # TDGL evolution equation.
     #
 
     dpsi_dt = (
-
         kinetic_term
         +
-        potential_term
-
-    ) / material_map.tdgl_u
-
-
+        linear_term
+        -
+        nonlinear_term
+    ) / u
 
     #
-    # Euler time integration
+    # Numerical sanity checks.
+    #
+
+    if not np.all(np.isfinite(dpsi_dt)):
+        raise RuntimeError(
+            "TDGL produced non-finite derivative values."
+        )
+
+    #
+    # Explicit Euler integration.
     #
 
     fields.psi = (
-        psi
-        +
-        dt *
-        dpsi_dt
-    )
-    #
-    # Numerical stability limiter
-    #
-
-    max_amplitude = 10.0
-
-
-    amplitude = np.abs(
-        fields.psi
+        psi +
+        dt * dpsi_dt
     )
 
+    #
+    # Numerical sanity check after update.
+    #
 
-    mask = amplitude > max_amplitude
-
-
-    if np.any(mask):
-
-        fields.psi[mask] *= (
-            max_amplitude /
-            amplitude[mask]
+    if not np.all(np.isfinite(fields.psi)):
+        raise RuntimeError(
+            "TDGL produced non-finite order-parameter values."
         )
 
     return fields

@@ -1,7 +1,10 @@
 import numpy as np
 
-from shs.tdgl import gradient
-
+from shs.tdgl import (
+    gradient, 
+    laplacian,
+    covariant_gradient
+)
 
 def test_tdgl_gradient_constant():
 
@@ -147,3 +150,18 @@ def test_covariant_gradient_phase_field():
         dy[5,5].imag,
         0.0
     )
+
+def test_tdgl_laplacian_preserves_shape():
+
+    psi = np.ones(
+        (100, 100),
+        dtype=complex
+    )
+
+    result = laplacian(
+        psi,
+        1.0,
+        1.0,
+    )
+
+    assert result.shape == psi.shape
