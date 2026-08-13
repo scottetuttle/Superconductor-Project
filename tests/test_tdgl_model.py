@@ -3,6 +3,7 @@ import numpy as np
 from shs.tdgl import (
     TDGLParameters,
     TDGLModel,
+    supercurrent_density
 )
 
 
@@ -132,4 +133,113 @@ def test_tdgl_equilibrium_order_parameter_phase():
         psi.imag,
         1.0,
         atol=1e-12,
+    )
+
+def test_supercurrent_uniform_zero_field():
+
+    psi = np.ones(
+        (20, 20),
+        dtype=complex
+    )
+
+    Ax = np.zeros(
+        (20, 20)
+    )
+
+    Ay = np.zeros(
+        (20, 20)
+    )
+
+    jx, jy = supercurrent_density(
+        psi,
+        Ax,
+        Ay,
+        1.0,
+        1.0,
+    )
+
+    assert np.allclose(
+        jx,
+        0.0
+    )
+
+    assert np.allclose(
+        jy,
+        0.0
+    )
+
+def test_supercurrent_from_vector_potential():
+
+    psi = np.ones(
+        (20, 20),
+        dtype=complex
+    )
+
+    Ax = np.ones(
+        (20, 20)
+    )
+
+    Ay = np.zeros(
+        (20, 20)
+    )
+
+    jx, jy = supercurrent_density(
+        psi,
+        Ax,
+        Ay,
+        1.0,
+        1.0,
+    )
+
+    assert np.isclose(
+        jx[10, 10],
+        -1.0
+    )
+
+    assert np.isclose(
+        jy[10, 10],
+        0.0
+    )
+
+def test_supercurrent_from_phase_gradient():
+
+    x = np.arange(20)
+
+    k = 0.1
+
+    psi = np.exp(
+        1j * k * x
+    )
+
+    psi = np.tile(
+        psi,
+        (20, 1)
+    )
+
+    Ax = np.zeros(
+        (20, 20)
+    )
+
+    Ay = np.zeros(
+        (20, 20)
+    )
+
+    jx, jy = supercurrent_density(
+        psi,
+        Ax,
+        Ay,
+        1.0,
+        1.0,
+    )
+
+    assert np.isclose(
+        jx[10, 10],
+        k,
+        atol=1e-2,
+    )
+
+    assert np.isclose(
+        jy[10, 10],
+        0.0,
+        atol=1e-2,
     )

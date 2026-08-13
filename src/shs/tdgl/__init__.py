@@ -7,8 +7,9 @@ from .parameters import (
     TDGLParameters,
 )
 
-from .model import(
-    TDGLModel
+from .model import (
+    TDGLModel,
+    supercurrent_density,
 )
 
 from .operators import (
@@ -23,6 +24,7 @@ __all__ = [
     "equilibrium_superconducting_state",
     "TDGLParameters",
     "TDGLModel",
+    "supercurrent_density"
     "gradient",
     "covariant_gradient",
     "covariant_laplacian",
