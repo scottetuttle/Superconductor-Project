@@ -198,69 +198,70 @@ class TDGLModel:
             amplitude *
             np.exp(1j * phase)
         )
-
-def supercurrent_density(
-    psi,
-    vector_potential_x,
-    vector_potential_y,
-    dx,
-    dy,
-):
-    """
-    Calculate the dimensionless superconducting current density.
-
-    Using the TDGL convention
-
-        D = ∇ - iA
-
-    the dimensionless supercurrent is
-
-        j_s = Im(psi* D psi)
-
-    with components
-
-        j_s,x = Im(psi* Dx psi)
-
-        j_s,y = Im(psi* Dy psi)
-
-    Parameters
-    ----------
-    psi : ndarray
-        Complex superconducting order parameter.
-
-    vector_potential_x : ndarray
-        x-component of the dimensionless vector potential.
-
-    vector_potential_y : ndarray
-        y-component of the dimensionless vector potential.
-
-    dx : float
-        Dimensionless grid spacing in x.
-
-    dy : float
-        Dimensionless grid spacing in y.
-
-    Returns
-    -------
-    jx, jy : ndarray
-        Dimensionless superconducting current-density
-        components.
-    """
-
-    Dx_psi, Dy_psi = covariant_gradient(
+    @staticmethod
+    def supercurrent_density(
         psi,
         vector_potential_x,
         vector_potential_y,
         dx,
         dy,
-    )
+    ):
+        """
+        Calculate the dimensionless superconducting current density.
 
-    jx = np.imag(
-        np.conjugate(psi) * Dx_psi
-    )
+        Using the TDGL convention
 
-    jy = np.imag(
-        np.conjugate(psi) * Dy_psi
-    )
+            D = ∇ - iA
 
-    return jx, jy
+        the dimensionless supercurrent is
+
+            j_s = Im(psi* D psi)
+
+        with components
+
+            j_s,x = Im(psi* Dx psi)
+
+            j_s,y = Im(psi* Dy psi)
+
+        Parameters
+        ----------
+        psi : ndarray
+            Complex superconducting order parameter.
+
+        vector_potential_x : ndarray
+            x-component of the dimensionless vector potential.
+
+        vector_potential_y : ndarray
+            y-component of the dimensionless vector potential.
+
+        dx : float
+            Dimensionless grid spacing in x.
+
+        dy : float
+            Dimensionless grid spacing in y.
+
+        Returns
+        -------
+        jx, jy : ndarray
+            Dimensionless superconducting current-density
+            components.
+        """
+
+        Dx_psi, Dy_psi = covariant_gradient(
+            psi,
+            vector_potential_x,
+            vector_potential_y,
+            dx,
+            dy,
+        )
+
+        jx = np.imag(
+            np.conjugate(psi) * Dx_psi
+        )
+
+        jy = np.imag(
+            np.conjugate(psi) * Dy_psi
+        )
+
+        return jx, jy
+

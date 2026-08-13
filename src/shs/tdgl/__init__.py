@@ -9,7 +9,6 @@ from .parameters import (
 
 from .model import (
     TDGLModel,
-    supercurrent_density,
 )
 
 from .operators import (

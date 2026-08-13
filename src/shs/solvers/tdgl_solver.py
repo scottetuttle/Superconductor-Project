@@ -200,7 +200,30 @@ def tdgl_step(
         psi +
         dt * dpsi_dt
     )
+    #
+# Supercurrent density.
+#
+# Calculate the superconducting current
+# associated with the updated order parameter.
+#
 
+    supercurrent_x, supercurrent_y = (
+        tdgl_model.supercurrent_density(
+            fields.psi,
+            Ax,
+            Ay,
+            dx_dimensionless,
+            dy_dimensionless,
+        )
+    )
+
+    fields.supercurrent_density_x = (
+        supercurrent_x
+    )
+
+    fields.supercurrent_density_y = (
+        supercurrent_y
+    )
     #
     # Numerical sanity check after update.
     #

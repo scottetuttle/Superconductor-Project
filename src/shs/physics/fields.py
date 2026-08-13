@@ -53,7 +53,9 @@ class Fields:
     #tdgl
 
     psi: np.ndarray
-
+    
+    supercurrent_density_x: np.ndarray
+    supercurrent_density_y: np.ndarray
 
 
     @classmethod
@@ -144,4 +146,12 @@ class Fields:
                 shape,
                 dtype=complex
             ),
+            supercurrent_density_x=np.zeros(
+                shape,
+                dtype=float
+            ),
+            supercurrent_density_y=np.zeros(
+                shape,
+                dtype=float
+            ),         
         )

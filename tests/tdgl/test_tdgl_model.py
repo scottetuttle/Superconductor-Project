@@ -3,7 +3,6 @@ import numpy as np
 from shs.tdgl import (
     TDGLParameters,
     TDGLModel,
-    supercurrent_density
 )
 
 
@@ -150,7 +149,7 @@ def test_supercurrent_uniform_zero_field():
         (20, 20)
     )
 
-    jx, jy = supercurrent_density(
+    jx, jy = TDGLModel.supercurrent_density(
         psi,
         Ax,
         Ay,
@@ -183,7 +182,7 @@ def test_supercurrent_from_vector_potential():
         (20, 20)
     )
 
-    jx, jy = supercurrent_density(
+    jx, jy = TDGLModel.supercurrent_density(
         psi,
         Ax,
         Ay,
@@ -224,7 +223,7 @@ def test_supercurrent_from_phase_gradient():
         (20, 20)
     )
 
-    jx, jy = supercurrent_density(
+    jx, jy = TDGLModel.supercurrent_density(
         psi,
         Ax,
         Ay,
