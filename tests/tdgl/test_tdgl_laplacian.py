@@ -39,7 +39,7 @@ def test_covariant_laplacian_constant_state():
 
 
 
-def test_covariant_laplacian_with_vector_potential():
+def test_covariant_laplacian_uniform_vector_potential():
 
     psi = np.ones(
         (20,20),
@@ -69,9 +69,14 @@ def test_covariant_laplacian_with_vector_potential():
     #
     # D²psi = -A²psi
 
+    expected = (
+        2.0 * np.cos(1.0)
+        - 2.0
+    )
+
     assert np.isclose(
-        result[10,10].real,
-        -1.0
+        result[10, 10].real,
+        expected
     )
 
 def test_laplacian_constant_state_including_boundaries():

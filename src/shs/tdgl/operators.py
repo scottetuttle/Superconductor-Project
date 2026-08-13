@@ -317,68 +317,273 @@ def covariant_laplacian(
     dy,
 ):
     """
-    Compute the gauge-covariant Laplacian.
+    Compute the gauge-consistent discrete covariant Laplacian.
 
-    For
+    The continuum operator is
 
-        D = ∇ - iA
+        D^2 psi
 
-    and assuming
+    with
 
-        ∇ · A = 0,
+        D = nabla - i A.
 
-    the operator becomes:
+    The discrete operator uses gauge links:
 
-        D²ψ =
-            ∇²ψ
-            - 2i A·∇ψ
-            - |A|² ψ
+        Ux = exp(-i Ax dx)
+        Uy = exp(-i Ay dy)
 
-    The returned array has the same shape as psi.
+    so that neighboring order-parameter values are
+    parallel transported before forming the finite difference.
 
-    Notes
-    -----
-    The current implementation assumes a
-    divergence-free vector potential.
+    This construction is gauge-consistent on the discrete grid
+    and does not require the assumption
 
-    A fully gauge-consistent implementation,
-    including arbitrary gauge choices and explicit
-    ∇·A contributions, will be developed as the
-    electromagnetic coupling is expanded.
+        div(A) = 0.
+
+    Parameters
+    ----------
+    psi : ndarray
+        Complex superconducting order parameter.
+
+    vector_potential_x : ndarray
+        x-component of dimensionless vector potential.
+
+    vector_potential_y : ndarray
+        y-component of dimensionless vector potential.
+
+    dx : float
+        Dimensionless grid spacing in x.
+
+    dy : float
+        Dimensionless grid spacing in y.
+
+    Returns
+    -------
+    ndarray
+        Gauge-consistent covariant Laplacian of psi.
     """
 
-    lap = laplacian(
-        psi,
-        dx,
-        dy,
-    )
-
-    dpsi_dx, dpsi_dy = gradient(
-        psi,
-        dx,
-        dy,
-    )
-
-    Ax = vector_potential_x
-    Ay = vector_potential_y
-
-    result = (
-
-        lap
-
-        -
-        2j * (
-            Ax * dpsi_dx
-            +
-            Ay * dpsi_dy
+    if dx <= 0.0:
+        raise ValueError(
+            "dx must be positive."
         )
 
-        -
-        (
-            Ax**2
-            +
-            Ay**2
-        ) * psi
+    if dy <= 0.0:
+        raise ValueError(
+            "dy must be positive."
+        )
+
+    if (
+        psi.shape != vector_potential_x.shape
+        or
+        psi.shape != vector_potential_y.shape
+    ):
+        raise ValueError(
+            "psi and vector potential fields "
+            "must have the same shape."
+        )
+
+    #
+    # Gauge links.
+    #
+    # These represent parallel transport between
+    # neighboring grid points.
+    #
+
+    Ux = np.exp(
+        -1j *
+        vector_potential_x *
+        dx
     )
 
-    return result
+    Uy = np.exp(
+        -1j *
+        vector_potential_y *
+        dy
+    )
+
+    lap = np.zeros_like(
+        psi,
+        dtype=complex,
+    )
+
+    #
+    # Interior points.
+    #
+    # x direction
+    #
+
+    lap[:, 1:-1] += (
+        Ux[:, 1:-1] * psi[:, 2:]
+        +
+        np.conjugate(
+            Ux[:, :-2]
+        ) * psi[:, :-2]
+        -
+        2.0 * psi[:, 1:-1]
+    ) / dx**2
+
+    #
+    # y direction
+    #
+
+    lap[1:-1, :] += (
+        Uy[1:-1, :] * psi[2:, :]
+        +
+        np.conjugate(
+            Uy[:-2, :]
+        ) * psi[:-2, :]
+        -
+        2.0 * psi[1:-1, :]
+    ) / dy**2
+
+    #
+    # Boundaries.
+    #
+    # These currently use the same zero-normal-current
+    # philosophy as the existing Laplacian infrastructure.
+    #
+    # Explicit superconducting boundary conditions will
+    # eventually be handled by the TDGL boundary module.
+    #
+
+    # Left
+    lap[:, 0] += (
+        Ux[:, 0] * psi[:, 1]
+        -
+        psi[:, 0]
+    ) / dx**2
+
+    # Right
+    lap[:, -1] += (
+        np.conjugate(
+            Ux[:, -1]
+        ) * psi[:, -2]
+        -
+        psi[:, -1]
+    ) / dx**2
+
+    # Bottom
+    lap[0, :] += (
+        Uy[0, :] * psi[1, :]
+        -
+        psi[0, :]
+    ) / dy**2
+
+    # Top
+    lap[-1, :] += (
+        np.conjugate(
+            Uy[-1, :]
+        ) * psi[-2, :]
+        -
+        psi[-1, :]
+    ) / dy**2
+
+    return lap
+
+def gauge_link_x(
+    vector_potential_x,
+    dx,
+):
+    """
+    Construct the gauge link in the x direction.
+
+    U_x = exp(-i A_x dx)
+
+    The link represents the gauge phase accumulated
+    across one grid spacing.
+    """
+
+    return np.exp(
+        -1j *
+        vector_potential_x *
+        dx
+    )
+
+
+def gauge_link_y(
+    vector_potential_y,
+    dy,
+):
+    """
+    Construct the gauge link in the y direction.
+
+    U_y = exp(-i A_y dy)
+    """
+
+    return np.exp(
+        -1j *
+        vector_potential_y *
+        dy
+    )
+
+def gauge_covariant_gradient(
+    psi,
+    vector_potential_x,
+    vector_potential_y,
+    dx,
+    dy,
+):
+    """
+    Compute a gauge-covariant finite-difference gradient.
+
+    Neighboring order parameters are compared through
+    gauge links rather than by directly subtracting
+    the vector potential.
+
+    Forward-difference form:
+
+        D_x psi =
+            (U_x psi_{i+1} - psi_i) / dx
+
+        D_y psi =
+            (U_y psi_{j+1} - psi_j) / dy
+    """
+
+    Dx = np.zeros_like(
+        psi,
+        dtype=complex,
+    )
+
+    Dy = np.zeros_like(
+        psi,
+        dtype=complex,
+    )
+
+    Ux = gauge_link_x(
+        vector_potential_x,
+        dx,
+    )
+
+    Uy = gauge_link_y(
+        vector_potential_y,
+        dy,
+    )
+
+    #
+    # x direction
+    #
+
+    if psi.shape[1] > 1:
+
+        Dx[:, :-1] = (
+            Ux[:, :-1] *
+            psi[:, 1:]
+            -
+            psi[:, :-1]
+        ) / dx
+
+    #
+    # y direction
+    #
+
+    if psi.shape[0] > 1:
+
+        Dy[:-1, :] = (
+            Uy[:-1, :] *
+            psi[1:, :]
+            -
+            psi[:-1, :]
+        ) / dy
+
+    return Dx, Dy

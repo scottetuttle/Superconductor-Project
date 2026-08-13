@@ -211,3 +211,56 @@ The immediate sequence is:
 Significant development milestones should be recorded here during development rather than waiting until the end of the day.
 
 If development is interrupted unexpectedly, the most recent completed milestone should still provide enough information to reconstruct the project state.
+
+## August 13, 2026 — TDGL Supercurrent
+
+### Added
+
+Implemented the analytical TDGL supercurrent density in:
+
+- `src/shs/tdgl/model.py`
+
+The model now provides the normalized supercurrent density derived from the complex order parameter and gauge-covariant gradient.
+
+For the current normalized formulation:
+
+`j_s = Im(psi* D psi)`
+
+where:
+
+`D = ∇ - iA`
+
+and `psi*` is the complex conjugate of the superconducting order parameter.
+
+The implementation uses the existing `covariant_gradient()` operator rather than introducing a separate numerical derivative.
+
+### Tests
+
+Added analytical supercurrent tests to:
+
+- `tests/test_tdgl_model.py`
+
+Tests verify:
+
+- zero current for a uniform order parameter with zero vector potential
+- expected current from a phase gradient
+- expected current response to a vector potential
+- correct current behavior for a complex order parameter
+
+All TDGL model tests pass.
+
+### Result
+
+SHS can now calculate the local superconducting current directly from the TDGL order parameter.
+
+This establishes the first explicit connection between:
+
+`psi → phase/amplitude → supercurrent`
+
+and provides the foundation for future current redistribution, electromagnetic coupling, and vortex physics.
+
+
+added TDGL supercurrent calculation and integrated superconducting current fields into simulation state.
+
+
+Replaced the TDGL covariant Laplacian with a gauge-consistent link-variable discretization and updated operator tests to validate the discrete formulation. Full test suite passes.

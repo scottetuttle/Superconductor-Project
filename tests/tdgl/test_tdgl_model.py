@@ -182,17 +182,24 @@ def test_supercurrent_from_vector_potential():
         (20, 20)
     )
 
+    dx = 1.0
+    dy = 1.0
+
     jx, jy = TDGLModel.supercurrent_density(
         psi,
         Ax,
         Ay,
-        1.0,
-        1.0,
+        dx,
+        dy,
+    )
+
+    expected_jx = -np.sin(
+        Ax[10, 10] * dx
     )
 
     assert np.isclose(
         jx[10, 10],
-        -1.0
+        expected_jx
     )
 
     assert np.isclose(
@@ -241,4 +248,43 @@ def test_supercurrent_from_phase_gradient():
         jy[10, 10],
         0.0,
         atol=1e-2,
+    )
+
+def test_supercurrent_small_vector_potential_approaches_continuum():
+
+    psi = np.ones(
+        (20, 20),
+        dtype=complex
+    )
+
+    Ax = np.full(
+        (20, 20),
+        0.01
+    )
+
+    Ay = np.zeros(
+        (20, 20)
+    )
+
+    dx = 1.0
+    dy = 1.0
+
+    jx, jy = TDGLModel.supercurrent_density(
+        psi,
+        Ax,
+        Ay,
+        dx,
+        dy,
+    )
+
+    assert np.isclose(
+        jx[10, 10],
+        -0.01,
+        atol=1e-4,
+    )
+
+    assert np.isclose(
+        jy[10, 10],
+        0.0,
+        atol=1e-12,
     )

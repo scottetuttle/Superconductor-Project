@@ -24,7 +24,7 @@ import numpy as np
 
 from .parameters import TDGLParameters
 
-from .operators import covariant_gradient
+from .operators import gauge_covariant_gradient
 
 @dataclass
 class TDGLModel:
@@ -247,7 +247,7 @@ class TDGLModel:
             components.
         """
 
-        Dx_psi, Dy_psi = covariant_gradient(
+        Dx_psi, Dy_psi = gauge_covariant_gradient(
             psi,
             vector_potential_x,
             vector_potential_y,
