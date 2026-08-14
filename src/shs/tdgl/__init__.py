@@ -21,6 +21,12 @@ from .operators import (
     gauge_covariant_gradient,
 )
 
+from .boundary import (
+    TDGLBoundarySide,
+    TDGLBoundaryType,
+    TDGLBoundaryCondition,
+    TDGLBoundarySet,
+)
 from .scaling import TDGLScales
 
 __all__ = [
@@ -37,4 +43,9 @@ __all__ = [
     "gauge_link_x",
     "gauge_link_y"
     "gauge_covariant_gradient",
+    "TDGLBoundaryCondition",
+    "TDGLBoundarySide",
+    "TDGLBoundaryType",
+    "TDGLBoundarySet",
+
 ]

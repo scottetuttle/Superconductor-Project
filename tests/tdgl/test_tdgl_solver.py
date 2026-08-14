@@ -20,6 +20,10 @@ from shs.config.simulation_state import Simulation
 from shs.tdgl import (
     TDGLModel,
     TDGLParameters,
+    TDGLBoundarySet,
+    TDGLBoundaryCondition,
+    TDGLBoundarySide,
+    TDGLBoundaryType,
 )
 
 from shs.solvers import tdgl_step
@@ -59,19 +63,32 @@ def create_nbn_simulation(
         initial_temperature=temperature
     )
 
-    simulation = Simulation(
-        config=None,
-        geometry=geometry,
-        mesh=mesh,
-        region_map=region_map,
-        material_map=material_map,
-        boundaries=None,
-        fields=fields,
-        contact_map=build_contact_map(
-            geometry,
-            mesh
-        ),
+    tdgl_boundaries = TDGLBoundarySet()
+
+    for side in TDGLBoundarySide:
+
+        tdgl_boundaries.add(
+            TDGLBoundaryCondition(
+                side=side,
+                type=TDGLBoundaryType.INSULATING,
+        )
     )
+
+    simulation = Simulation(
+    config=None,
+    geometry=geometry,
+    mesh=mesh,
+    region_map=region_map,
+    material_map=material_map,
+    boundaries=None,
+    tdgl_boundaries=tdgl_boundaries,
+    fields=fields,
+    contact_map=build_contact_map(
+        geometry,
+        mesh
+    ),
+)
+
 
     return simulation
 
@@ -365,4 +382,45 @@ def test_tdgl_uniform_state_approaches_equilibrium():
         final_amplitude,
         expected_amplitude,
         atol=5e-4,
+    )
+
+def test_tdgl_solver_enforces_insulating_boundaries():
+
+    simulation = create_nbn_simulation(
+        temperature=3.0
+    )
+
+    model = TDGLModel(
+        TDGLParameters()
+    )
+
+    simulation.fields.psi[:] = (
+        1.0 + 0.0j
+    )
+
+    simulation.fields.psi[:, 1] = (
+        0.8 + 0.2j
+    )
+
+    tdgl_step(
+        simulation,
+        dt=0.001,
+        tdgl_model=model,
+    )
+
+    psi = simulation.fields.psi
+
+    Ax = simulation.fields.vector_potential_x
+    Ay = simulation.fields.vector_potential_y
+
+    Dx_left = (
+        (psi[:, 1] - psi[:, 0])
+        / (simulation.mesh.dx / simulation.material_map.materials[0].coherence_length)
+        - 1j * Ax[:, 0] * psi[:, 0]
+    )
+
+    assert np.allclose(
+        Dx_left,
+        0.0,
+        atol=1e-10,
     )

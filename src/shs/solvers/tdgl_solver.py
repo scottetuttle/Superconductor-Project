@@ -28,6 +28,10 @@ from shs.config.simulation_state import Simulation
 from shs.tdgl.model import TDGLModel
 from shs.tdgl.operators import covariant_laplacian
 
+from shs.tdgl.boundary import (
+    apply_insulating_boundary,
+)
+
 
 def tdgl_step(
     simulation: Simulation,
@@ -201,6 +205,14 @@ def tdgl_step(
         dt * dpsi_dt
     )
     #
+
+    fields.psi = apply_insulating_boundary(
+        fields.psi,
+        Ax,
+        Ay,
+        dx_dimensionless,
+        dy_dimensionless,
+    )
 # Supercurrent density.
 #
 # Calculate the superconducting current

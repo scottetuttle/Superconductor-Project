@@ -1,7 +1,8 @@
 """
 Boundary condition definitions.
 
-These classes describe the physical environment at the edge of the device.
+These classes describe the physical environment
+at the edge of the device.
 
 They do NOT implement numerical algorithms.
 Those belong inside the individual solvers.
@@ -58,7 +59,10 @@ class BoundarySet:
     Collection of boundary conditions.
     """
 
-    boundaries: dict[BoundarySide, BoundaryCondition] = field(
+    boundaries: dict[
+        BoundarySide,
+        BoundaryCondition
+    ] = field(
         default_factory=dict
     )
 
@@ -70,8 +74,9 @@ class BoundarySet:
         Add or replace a boundary condition.
         """
 
-        self.boundaries[boundary.side] = boundary
-
+        self.boundaries[
+            boundary.side
+        ] = boundary
 
     def get(
         self,
@@ -83,7 +88,6 @@ class BoundarySet:
 
         return self.boundaries[side]
 
-
     def __contains__(
         self,
         side: BoundarySide,
@@ -91,11 +95,12 @@ class BoundarySet:
         """
         Allow:
 
-        BoundarySide.LEFT in boundaries
+            BoundarySide.LEFT in boundaries
         """
 
         return side in self.boundaries
 
-
     def __iter__(self):
-        return iter(self.boundaries.values())
+        return iter(
+            self.boundaries.values()
+        )

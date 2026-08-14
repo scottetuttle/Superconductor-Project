@@ -5,6 +5,8 @@ Converts a simulation configuration file into
 a complete SHS simulation object.
 """
 
+from pathlib import Path
+
 from shs.config.simulation import load_simulation
 from shs.config.simulation_state import Simulation
 
@@ -16,28 +18,42 @@ from shs.materials.database import get_material
 from shs.mapping import (
     build_region_map,
     build_material_map,
+    build_contact_map,
 )
 
-from shs.boundaries import BoundarySet
-from shs.boundaries.boundary import (
+from shs.boundaries import (
+    BoundarySet,
     BoundaryCondition,
     BoundarySide,
     BoundaryType,
 )
 
-from pathlib import Path
-
 from shs.physics.fields import Fields
 
-from shs.mapping import build_contact_map
-
+from shs.tdgl.boundary import (
+    TDGLBoundarySet,
+    TDGLBoundaryCondition,
+    TDGLBoundarySide,
+    TDGLBoundaryType,
+)
 
 def build_simulation(filepath):
+    """
+    Construct a complete SHS simulation from a
+    simulation configuration file.
+    """
+
     CONFIG_ROOT = Path("configs")
+
+    #
+    # Simulation configuration
+    #
+
     config = load_simulation(filepath)
 
-
+    #
     # Geometry
+    #
 
     geometry_path = (
         CONFIG_ROOT /
@@ -49,27 +65,22 @@ def build_simulation(filepath):
         geometry_path
     )
 
-
     mesh = create_mesh(
         geometry
     )
 
-
+    #
     # Region mapping
+    #
 
     region_map = build_region_map(
         geometry,
         mesh
     )
 
-
+    #
     # Material mapping
-
-    material_path = (
-        CONFIG_ROOT /
-        "materials" /
-        config.material
-    )
+    #
 
     material_name = (
         config.material.replace(
@@ -82,32 +93,42 @@ def build_simulation(filepath):
         material_name
     )
 
-
     material_map = build_material_map(
         region_map,
         material
     )
 
+    #
+    # Contact mapping
+    #
+
     contact_map = build_contact_map(
         geometry,
-        mesh,
-)
-    # Boundaries
+        mesh
+    )
+
+    #
+    # Runtime fields
+    #
+
+    fields = Fields.create(
+        mesh=mesh,
+        initial_temperature=config.temperature,
+    )
+
+    #
+    # Thermal / electrical boundaries
+    #
 
     boundaries = BoundarySet()
 
     for side_name, values in config.boundaries.items():
 
-        # Runtime fields
-
-        fields = Fields.create(
-        mesh=mesh,
-        initial_temperature=config.temperature,
-)
-
         boundary = BoundaryCondition(
 
-            side=BoundarySide(side_name),
+            side=BoundarySide(
+                side_name
+            ),
 
             type=BoundaryType(
                 values["type"]
@@ -130,7 +151,28 @@ def build_simulation(filepath):
             boundary
         )
 
+    #
+    # TDGL boundaries
+    #
 
+    # TDGL boundaries
+
+    tdgl_boundaries = TDGLBoundarySet()
+
+    for side_name, values in config.boundaries.items():
+
+        tdgl_boundary = TDGLBoundaryCondition(
+            side=TDGLBoundarySide(side_name),
+            type=TDGLBoundaryType.INSULATING,
+        )
+
+        tdgl_boundaries.add(
+            tdgl_boundary
+        )
+
+    #
+    # Complete simulation
+    #
 
     return Simulation(
 
@@ -149,4 +191,6 @@ def build_simulation(filepath):
         fields=fields,
 
         contact_map=contact_map,
+
+        tdgl_boundaries=tdgl_boundaries,
     )

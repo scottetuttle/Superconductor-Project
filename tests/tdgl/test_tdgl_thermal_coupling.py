@@ -22,6 +22,10 @@ from shs.tdgl.operators import covariant_laplacian
 from shs.tdgl import (
     TDGLModel,
     TDGLParameters,
+    TDGLBoundarySet,
+    TDGLBoundaryCondition,
+    TDGLBoundarySide,
+    TDGLBoundaryType,
 )
 
 from shs.solvers import tdgl_step
@@ -55,6 +59,16 @@ def test_local_temperature_suppresses_order_parameter():
         mesh,
         initial_temperature=3.0
     )
+    tdgl_boundaries = TDGLBoundarySet()
+
+    for side in TDGLBoundarySide:
+
+        tdgl_boundaries.add(
+            TDGLBoundaryCondition(
+                side=side,
+                type=TDGLBoundaryType.INSULATING,
+            )
+        )
 
     simulation = Simulation(
         config=None,
@@ -63,12 +77,13 @@ def test_local_temperature_suppresses_order_parameter():
         region_map=region_map,
         material_map=material_map,
         boundaries=None,
+        tdgl_boundaries=tdgl_boundaries,
         fields=fields,
         contact_map=build_contact_map(
             geometry,
             mesh
-        ),
-    )
+    ),
+)
 
     #
     # Start from a uniform superconducting state.

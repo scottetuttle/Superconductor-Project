@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from shs.config.simulation import SimulationConfig
 
@@ -16,6 +16,7 @@ from shs.physics.fields import Fields
 
 from shs.mapping.contact_map import ContactMap
 
+from shs.tdgl.boundary import TDGLBoundarySet
 
 @dataclass
 class Simulation:
@@ -35,10 +36,14 @@ class Simulation:
 
     boundaries: BoundarySet
 
+
     fields: Fields
 
     contact_map: ContactMap
 
+    tdgl_boundaries: TDGLBoundarySet = field(
+        default_factory=TDGLBoundarySet
+    )
 
     def validate(self):
         """

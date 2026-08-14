@@ -30,5 +30,22 @@
         "bottom": {
             "type": "insulating"
         }
+    },
+    "tdgl_boundaries": {
+        "left": {
+            "type": "insulating"
+        },
+
+        "right": {
+            "type": "insulating"
+        },
+
+        "top": {
+            "type": "insulating"
+        },
+
+        "bottom": {
+            "type": "insulating"
+        }
 }
 }
