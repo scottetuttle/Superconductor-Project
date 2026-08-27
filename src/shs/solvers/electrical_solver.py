@@ -37,6 +37,8 @@ def electrical_step(
     contact_map: ContactMap,
     voltage_left: float = 1.0,
     voltage_right: float = 0.0,
+    superconducting_current_x=None,
+    superconducting_current_y=None,
 ):
     """
     Perform one electrical transport solve.
@@ -108,6 +110,12 @@ def electrical_step(
         material_map.electrical_conductivity
     )
 
+    if superconducting_current_x is None:
+        superconducting_current_x = np.zeros_like(V)
+
+    if superconducting_current_y is None:
+        superconducting_current_y = np.zeros_like(V)
+
 
 
     #
@@ -115,11 +123,35 @@ def electrical_step(
     #
     # ∇ · σ∇V = 0
     #
+    # J=Js​+Jn
+    #
+    # ∇⋅(Js​+σn​E)=0.
+    #
+
+    source = np.zeros_like(V)
+
+    source[1:-1, 1:-1] = -(
+        (
+            superconducting_current_x[1:-1, 2:]
+            -
+            superconducting_current_x[1:-1, :-2]
+        )
+        /
+        (2.0 * mesh.dx)
+        +
+        (
+            superconducting_current_y[2:, 1:-1]
+            -
+            superconducting_current_y[:-2, 1:-1]
+        )
+        /
+        (2.0 * mesh.dy)
+    )
 
     result = red_black_sor(
         solution=V,
         coefficient=sigma,
-        source=np.zeros_like(V),
+        source=source,
         boundary_mask=boundary_mask,
         boundary_values=boundary_values,
         dx=mesh.dx,
@@ -179,15 +211,26 @@ def electrical_step(
     # Current density
     #
 
-    fields.current_density_x = (
+    normal_current_x = (
         sigma *
         Ex
     )
 
-
-    fields.current_density_y = (
+    normal_current_y = (
         sigma *
         Ey
+    )
+
+    fields.current_density_x = (
+        normal_current_x
+        +
+        superconducting_current_x
+    )
+
+    fields.current_density_y = (
+        normal_current_y
+        +
+        superconducting_current_y
     )
         #
     # Joule heating
@@ -195,21 +238,10 @@ def electrical_step(
     # Q = J^2 rho
     #
 
-    J_squared = (
-        fields.current_density_x**2
-        +
-        fields.current_density_y**2
-    )
-
-
-    rho = (
-        material_map.normal_resistivity
-    )
-
-
     fields.heat_source = (
-        J_squared *
-        rho
+        normal_current_x * Ex
+        +
+        normal_current_y * Ey
     )
 
 

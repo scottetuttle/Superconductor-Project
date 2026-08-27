@@ -1,23 +1,8 @@
 """
 SHS Electrical Physics Module
 
-Defines electrical transport properties.
-
-Current model:
-
-    J = σE
-
-and Joule heating
-
-    Q = J · E
-
-Future:
-
-- superconducting conductivity
-- two-fluid model
-- nonlinear resistivity
-- vortex dissipation
-- TDGL coupling
+Defines electrical transport properties and coupling
+between superconducting and normal current.
 """
 
 from dataclasses import dataclass
@@ -45,26 +30,99 @@ class ElectricalModel:
 
         return 1.0 / resistivity
 
+    def normal_current(
+        self,
+        electric_field_x,
+        electric_field_y,
+        resistivity,
+        superconducting_fraction,
+    ):
+        """
+        Calculate the normal current contribution.
+
+        The superconducting fraction is:
+
+            f_s = |psi|^2
+
+        and the normal fraction is:
+
+            f_n = 1 - |psi|^2
+
+        The normal current is:
+
+            J_n = f_n * sigma * E
+        """
+
+        conductivity = self.conductivity(
+            resistivity
+        )
+
+        normal_fraction = np.maximum(
+            1.0 - superconducting_fraction,
+            0.0,
+        )
+
+        current_x = (
+            normal_fraction
+            * conductivity
+            * electric_field_x
+        )
+
+        current_y = (
+            normal_fraction
+            * conductivity
+            * electric_field_y
+        )
+
+        return current_x, current_y
+
+    def total_current(
+        self,
+        supercurrent_density_x,
+        supercurrent_density_y,
+        normal_current_x,
+        normal_current_y,
+    ):
+        """
+        Calculate total current density.
+
+            J = J_s + J_n
+        """
+
+        total_x = (
+            supercurrent_density_x
+            +
+            normal_current_x
+        )
+
+        total_y = (
+            supercurrent_density_y
+            +
+            normal_current_y
+        )
+
+        return total_x, total_y
+
     def joule_heating(
         self,
-        current_density_x,
-        current_density_y,
+        dissipative_current_x,
+        dissipative_current_y,
         electric_field_x,
         electric_field_y,
     ):
         """
-        Compute Joule heating.
+        Calculate dissipative Joule heating.
 
-        Q = J · E
+            Q_J = J_n · E
 
-        Returns
-        -------
-        ndarray
-            Volumetric heat generation.
+        The superconducting current does not directly
+        contribute to Joule heating.
         """
 
         return (
-            current_density_x * electric_field_x
+            dissipative_current_x
+            * electric_field_x
             +
-            current_density_y * electric_field_y
+            dissipative_current_y
+            * electric_field_y
         )
