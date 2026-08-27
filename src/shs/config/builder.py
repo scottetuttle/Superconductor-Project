@@ -37,6 +37,8 @@ from shs.tdgl.boundary import (
     TDGLBoundaryType,
 )
 
+from shs.tdgl.initialization import equilibrium_superconducting_state
+
 def build_simulation(filepath):
     """
     Construct a complete SHS simulation from a
@@ -111,11 +113,23 @@ def build_simulation(filepath):
     # Runtime fields
     #
 
+    reduced_temperature = (
+        config.temperature /
+        material_map.Tc
+    )
+
+    initial_psi = equilibrium_superconducting_state(
+        shape=(mesh.ny, mesh.nx),
+        reduced_temperature=float(
+            reduced_temperature[0, 0]
+        ),
+    )
+
     fields = Fields.create(
         mesh=mesh,
         initial_temperature=config.temperature,
+        initial_psi=initial_psi,
     )
-
     #
     # Thermal / electrical boundaries
     #

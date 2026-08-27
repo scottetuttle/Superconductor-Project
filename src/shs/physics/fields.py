@@ -15,6 +15,8 @@ import numpy as np
 
 from shs.geometry.mesh import Mesh
 
+from shs.tdgl.initialization import equilibrium_superconducting_state
+
 
 @dataclass
 class Fields:
@@ -62,7 +64,8 @@ class Fields:
     def create(
         cls,
         mesh: Mesh,
-        initial_temperature: float
+        initial_temperature: float,
+        initial_psi=None,
     ):
         """
         Create empty simulation fields.
@@ -73,7 +76,12 @@ class Fields:
             mesh.nx
         )
 
+        if initial_psi is None:
 
+            initial_psi = equilibrium_superconducting_state(
+                shape,
+                reduced_temperature=0.0,
+            )
         return cls(
 
             # Thermal
@@ -142,10 +150,10 @@ class Fields:
 
             #tdgl
 
-            psi=np.ones(
-                shape,
-                dtype=complex
-            ),
+            psi=np.asarray(
+                initial_psi,
+                dtype=complex,
+            ).copy(),
             supercurrent_density_x=np.zeros(
                 shape,
                 dtype=float
