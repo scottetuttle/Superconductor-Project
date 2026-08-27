@@ -264,4 +264,54 @@ class TDGLModel:
         )
 
         return jx, jy
+    def characteristic_time(
+        self,
+        critical_temperature,
+    ):
+        """
+        Return the reference physical TDGL characteristic time.
 
+        This is the fixed time scale used to convert physical
+        time into the normalized TDGL time used by the solver.
+        """
+
+        hbar = 1.054571817e-34
+        k_B = 1.380649e-23
+
+        critical_temperature = float(
+            critical_temperature
+        )
+
+        if critical_temperature <= 0.0:
+            raise ValueError(
+                "Critical temperature must be positive."
+            )
+
+        return (
+            np.pi * hbar
+            /
+            (
+                8.0 *
+                k_B *
+                critical_temperature
+            )
+        )
+    def dimensional_to_normalized_time(
+        self,
+        dt,
+        critical_temperature,
+    ):
+        """
+        Convert a physical timestep into normalized TDGL time.
+        """
+
+        if dt <= 0.0:
+            raise ValueError(
+                "Physical timestep must be positive."
+            )
+
+        tau_GL = self.characteristic_time(
+            critical_temperature
+        )
+
+        return dt / tau_GL

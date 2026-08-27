@@ -35,8 +35,9 @@ def electrical_step(
     mesh,
     material_map: MaterialMap,
     contact_map: ContactMap,
-    voltage_left: float = 1.0,
+    voltage_left: float = 1e-3,
     voltage_right: float = 0.0,
+    superconducting_fraction=None,
     superconducting_current_x=None,
     superconducting_current_y=None,
 ):
@@ -106,15 +107,62 @@ def electrical_step(
     # Electrical conductivity
     #
 
-    sigma = (
-        material_map.electrical_conductivity
-    )
-
     if superconducting_current_x is None:
         superconducting_current_x = np.zeros_like(V)
 
     if superconducting_current_y is None:
         superconducting_current_y = np.zeros_like(V)
+
+    if superconducting_fraction is None:
+        superconducting_fraction = np.zeros_like(V)
+
+    normal_fraction = np.maximum(
+        1.0 - superconducting_fraction,
+        0.0,
+    )
+
+    sigma = (
+        material_map.electrical_conductivity
+        *
+        normal_fraction
+    )
+    #
+# Perfectly superconducting limit
+#
+# If there is no normal conductivity anywhere,
+# there is no normal-current potential equation
+# to solve.
+#
+
+    if np.all(sigma <= 0.0):
+
+        fields.electric_field_x = np.zeros_like(V)
+        fields.electric_field_y = np.zeros_like(V)
+
+        fields.normal_current_density_x = (
+            np.zeros_like(V)
+        )
+
+        fields.normal_current_density_y = (
+            np.zeros_like(V)
+        )
+
+        fields.current_density_x = (
+            superconducting_current_x.copy()
+        )
+
+        fields.current_density_y = (
+            superconducting_current_y.copy()
+        )
+
+        fields.heat_source = np.zeros_like(V)
+
+        fields.electrical_solver_iterations = 0
+        fields.electrical_solver_residual = 0.0
+
+        return fields
+
+
 
 
 
@@ -220,6 +268,14 @@ def electrical_step(
         sigma *
         Ey
     )
+    fields.normal_current_density_x = (
+        normal_current_x
+    )
+
+    fields.normal_current_density_y = (
+        normal_current_y
+    )    
+
 
     fields.current_density_x = (
         normal_current_x

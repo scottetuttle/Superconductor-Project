@@ -264,3 +264,55 @@ added TDGL supercurrent calculation and integrated superconducting current field
 
 
 Replaced the TDGL covariant Laplacian with a gauge-consistent link-variable discretization and updated operator tests to validate the discrete formulation. Full test suite passes.
+
+2026-08-27 — Electrical Driving, TDGL/Electrical Coupling, and Test Cleanup
+
+Completed:
+
+Investigated the electrical solver's imposed-voltage behavior after identifying that the solver had previously been using an inappropriate/default voltage value.
+Changed the electrical solver's left-contact voltage for the current test case to:
+voltage_left = 1e-3 V
+voltage_right = 0.0 V
+Re-ran the fully coupled thermal/TDGL/electrical test.
+Confirmed that the electrical solution now produces a physically plausible response to the imposed voltage:
+left/right voltage difference remains approximately 1 mV
+electric field is finite and stable
+normal current develops as superconductivity is suppressed
+Joule heating increases as the normal current develops
+|psi| decreases during evolution
+fields remain finite throughout the tested evolution.
+The coupled test therefore appears to be functionally behaving correctly at this development stage, although this test does not yet constitute rigorous physical validation of the complete coupled model.
+Reviewed electrical_solver.py and physics/electrical.py with particular attention to:
+imposed voltage boundary conditions
+normal versus superconducting current
+conductivity suppression by superconducting fraction
+electric-field calculation
+Joule heating.
+Confirmed that the electrical model consistently separates:
+J = J_s + J_n
+J_n = sigma_eff E
+Q_J = J_n · E
+Identified a broader architectural issue for future cleanup: physical/control values that are currently embedded directly in solvers, tests, or Python modules should eventually be moved into the configuration system. Voltage is the first clear example.
+Decided that solver/model code should generally not contain large amounts of diagnostic print() output. Diagnostics should eventually be represented through structured fields/results or dedicated debugging/analysis tools instead.
+Converted the previously diagnostic-heavy coupled heating test into the direction of an automated test:
+verify finite fields
+verify superconducting suppression
+verify imposed voltage drop
+verify dissipative heating.
+The existing test suite remains useful, but the current coupled tests should be regarded primarily as sanity/integration tests, rather than complete physical validation tests.
+
+Important result:
+
+The electrical/TDGL coupling is now behaving coherently enough to move forward. The remaining uncertainty is primarily how rigorously the numerical and physical behavior is being validated, rather than an obvious failure of the electrical coupling itself.
+
+Next development step:
+
+Perform a systematic audit of the entire test suite. For each test, determine whether it is:
+
+a unit/component test,
+a numerical solver test,
+an integration/coupling test,
+a physical validation test, or
+primarily a diagnostic test that should eventually be replaced or removed.
+
+Also begin identifying all hard-coded physical/control parameters in the solver stack and migrate them toward the configuration system where appropriate.

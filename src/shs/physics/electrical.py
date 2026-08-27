@@ -14,6 +14,17 @@ import numpy as np
 class ElectricalModel:
     """
     Electrical transport model.
+
+    Separates normal and superconducting current:
+
+        J = J_s + J_n
+
+    with
+
+        J_n = sigma_n E
+
+    where the effective normal conductivity is reduced
+    by the superconducting fraction.
     """
 
     reference_voltage: float = 1.0
@@ -30,27 +41,15 @@ class ElectricalModel:
 
         return 1.0 / resistivity
 
-    def normal_current(
+    def normal_conductivity(
         self,
-        electric_field_x,
-        electric_field_y,
         resistivity,
         superconducting_fraction,
     ):
         """
-        Calculate the normal current contribution.
+        Calculate the effective normal conductivity.
 
-        The superconducting fraction is:
-
-            f_s = |psi|^2
-
-        and the normal fraction is:
-
-            f_n = 1 - |psi|^2
-
-        The normal current is:
-
-            J_n = f_n * sigma * E
+            sigma_eff = (1 - |psi|^2) sigma_n
         """
 
         conductivity = self.conductivity(
@@ -62,16 +61,37 @@ class ElectricalModel:
             0.0,
         )
 
+        return (
+            normal_fraction *
+            conductivity
+        )
+
+    def normal_current(
+        self,
+        electric_field_x,
+        electric_field_y,
+        resistivity,
+        superconducting_fraction,
+    ):
+        """
+        Calculate the normal current contribution.
+
+            J_n = sigma_eff E
+        """
+
+        conductivity = self.normal_conductivity(
+            resistivity,
+            superconducting_fraction,
+        )
+
         current_x = (
-            normal_fraction
-            * conductivity
-            * electric_field_x
+            conductivity *
+            electric_field_x
         )
 
         current_y = (
-            normal_fraction
-            * conductivity
-            * electric_field_y
+            conductivity *
+            electric_field_y
         )
 
         return current_x, current_y
@@ -105,8 +125,8 @@ class ElectricalModel:
 
     def joule_heating(
         self,
-        dissipative_current_x,
-        dissipative_current_y,
+        normal_current_x,
+        normal_current_y,
         electric_field_x,
         electric_field_y,
     ):
@@ -114,15 +134,10 @@ class ElectricalModel:
         Calculate dissipative Joule heating.
 
             Q_J = J_n · E
-
-        The superconducting current does not directly
-        contribute to Joule heating.
         """
 
         return (
-            dissipative_current_x
-            * electric_field_x
+            normal_current_x * electric_field_x
             +
-            dissipative_current_y
-            * electric_field_y
+            normal_current_y * electric_field_y
         )

@@ -42,7 +42,7 @@ def test_tdgl_suppression_generates_joule_heating():
 
     thermal_tdgl_step(
         simulation,
-        dt=0.001,
+        dt=1e-13,
         tdgl_model=tdgl_model,
         thermal_model=thermal_model,
         electrical_model=electrical_model,
@@ -80,7 +80,7 @@ def test_supercurrent_is_not_dissipative():
 
     thermal_tdgl_step(
         simulation,
-        dt=0.001,
+        dt=1e-13,
         tdgl_model=tdgl_model,
         thermal_model=thermal_model,
         electrical_model=electrical_model,
@@ -149,7 +149,7 @@ def test_electrothermal_feedback():
 
         thermal_tdgl_step(
             simulation,
-            dt=0.001,
+            dt=1e-13,
             tdgl_model=tdgl_model,
             thermal_model=thermal_model,
             electrical_model=electrical_model,

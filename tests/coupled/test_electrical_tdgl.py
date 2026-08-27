@@ -211,7 +211,7 @@ def test_electrical_tdgl_produces_total_current():
 
     electrical_tdgl_step(
         simulation,
-        dt=0.001,
+        dt=1e-13,
         tdgl_model=tdgl_model,
         electrical_model=electrical_model,
         voltage_left=1.0,
@@ -262,10 +262,10 @@ def test_supercurrent_contributes_to_total_current():
 
     electrical_tdgl_step(
         simulation,
-        dt=0.001,
+        dt=1e-13,
         tdgl_model=tdgl_model,
         electrical_model=electrical_model,
-        voltage_left=1.0,
+        voltage_left=1e-3,
         voltage_right=0.0,
     )
 

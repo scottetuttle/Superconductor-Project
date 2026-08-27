@@ -34,40 +34,20 @@ from shs.tdgl.boundary import (
 
 
 def tdgl_step(
-    simulation: Simulation,
-    dt: float,
-    tdgl_model: TDGLModel,
+    simulation,
+    dt,
+    tdgl_model,
 ):
     """
-    Advance the TDGL order parameter by one timestep.
+    Advance the TDGL order parameter by one physical timestep.
 
     Parameters
     ----------
-    simulation:
-        Complete SHS simulation state.
-
     dt:
-        Dimensionless TDGL timestep.
+        Physical timestep in seconds.
 
-    tdgl_model:
-        TDGL physical model.
-
-    Returns
-    -------
-    Fields
-        Updated simulation fields.
-
-    Notes
-    -----
-    The normalized TDGL equation is:
-
-        u dpsi/dt =
-            D^2 psi
-            + (1 - T/Tc) psi
-            - |psi|^2 psi
-
-    Spatial coordinates are normalized by the
-    coherence length xi.
+    The timestep is converted internally to the
+    dimensionless TDGL timescale.
     """
 
     if dt <= 0.0:
@@ -78,6 +58,55 @@ def tdgl_step(
     fields = simulation.fields
     material_map = simulation.material_map
     mesh = simulation.mesh
+
+    material = material_map.materials[0]
+
+    Tc = material.Tc
+
+    dt_dimensionless = (
+        tdgl_model.dimensional_to_normalized_time(
+            dt,
+            Tc,
+        )
+    )
+
+    if not np.all(np.isfinite(dt_dimensionless)):
+        raise RuntimeError(
+            "TDGL produced a non-finite normalized timestep."
+        )
+
+    max_dt = (
+        tdgl_model.parameters.max_normalized_timestep
+    )
+    tau_GL = tdgl_model.characteristic_time(Tc)
+
+    if max_dt <= 0.0:
+        raise ValueError(
+            "Maximum normalized TDGL timestep must be positive."
+        )
+
+    # Use the largest local normalized timestep so that
+    # the entire spatial domain is advanced with a stable
+    # explicit timestep.
+
+    dt_dimensionless = np.max(
+        dt_dimensionless
+    )
+
+    number_of_steps = max(
+        1,
+        int(
+            np.ceil(
+                dt_dimensionless /
+                max_dt
+            )
+        )
+    )
+
+    sub_dt = (
+        dt_dimensionless /
+        number_of_steps
+    )
 
     psi = fields.psi.copy()
 
@@ -136,75 +165,99 @@ def tdgl_step(
     # Gauge-covariant kinetic term.
     #
 
-    kinetic_term = covariant_laplacian(
-        psi,
-        Ax,
-        Ay,
-        dx_dimensionless,
-        dy_dimensionless,
-    )
-
-    #
-    # Linear GL contribution.
-    #
-    # (1 - T/Tc) psi
-    #
-
-    linear_term = (
-        1.0 -
-        reduced_temperature
-    ) * psi
-
-    #
-    # Nonlinear GL contribution.
-    #
-    # |psi|^2 psi
-    #
-
-    nonlinear_term = (
-        np.abs(psi)**2 *
-        psi
-    )
-
     #
     # TDGL relaxation parameter.
-    #
-    # This belongs to the dimensionless TDGL model,
-    # not to the spatial material map.
     #
 
     u = tdgl_model.parameters.u
 
-    #
-    # TDGL evolution equation.
-    #
-
-    dpsi_dt = (
-        kinetic_term
-        +
-        linear_term
-        -
-        nonlinear_term
-    ) / u
 
     #
-    # Numerical sanity checks.
+    # Explicit Euler TDGL integration.
+    #
+    # The physical timestep has been converted into
+    # normalized TDGL time and divided into stable
+    # substeps.
     #
 
-    if not np.all(np.isfinite(dpsi_dt)):
-        raise RuntimeError(
-            "TDGL produced non-finite derivative values."
+    for _ in range(number_of_steps):
+
+        #
+        # Gauge-covariant kinetic term.
+        #
+
+        kinetic_term = covariant_laplacian(
+            psi,
+            Ax,
+            Ay,
+            dx_dimensionless,
+            dy_dimensionless,
         )
 
+
+        #
+        # Linear GL contribution.
+        #
+        # (1 - T/Tc) psi
+        #
+
+        linear_term = (
+            1.0 -
+            reduced_temperature
+        ) * psi
+
+
+        #
+        # Nonlinear GL contribution.
+        #
+        # |psi|^2 psi
+        #
+
+        nonlinear_term = (
+            np.abs(psi)**2 *
+            psi
+        )
+
+
+        #
+        # TDGL evolution equation.
+        #
+
+        dpsi_dt = (
+            kinetic_term
+            +
+            linear_term
+            -
+            nonlinear_term
+        ) / u
+
+
+        #
+        # Numerical sanity check.
+        #
+
+        if not np.all(np.isfinite(dpsi_dt)):
+            raise RuntimeError(
+                "TDGL produced non-finite derivative values."
+            )
+
+
+        #
+        # Explicit Euler substep.
+        #
+
+        psi = (
+            psi +
+            sub_dt * dpsi_dt
+        )
+
+
     #
-    # Explicit Euler integration.
+    # Store completed physical timestep.
     #
 
-    fields.psi = (
-        psi +
-        dt * dpsi_dt
-    )
-    #
+    fields.psi = psi
+        #
 
     fields.psi = apply_insulating_boundary(
         fields.psi,

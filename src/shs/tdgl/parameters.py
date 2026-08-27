@@ -63,6 +63,8 @@ class TDGLParameters:
 
     reduced_temperature: float = 0.0
 
+    max_normalized_timestep: float = 0.01
+
     def validate(self):
         """
         Validate TDGL parameters.

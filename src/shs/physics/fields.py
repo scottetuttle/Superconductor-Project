@@ -59,6 +59,8 @@ class Fields:
     supercurrent_density_x: np.ndarray
     supercurrent_density_y: np.ndarray
 
+    normal_current_density_x: np.ndarray
+    normal_current_density_y: np.ndarray
 
     @classmethod
     def create(
@@ -150,16 +152,30 @@ class Fields:
 
             #tdgl
 
+            # TDGL
+
             psi=np.asarray(
                 initial_psi,
                 dtype=complex,
             ).copy(),
+
             supercurrent_density_x=np.zeros(
                 shape,
                 dtype=float
             ),
+
             supercurrent_density_y=np.zeros(
                 shape,
                 dtype=float
-            ),         
+            ),
+
+            normal_current_density_x=np.zeros(
+                shape,
+                dtype=float
+            ),
+
+            normal_current_density_y=np.zeros(
+                shape,
+                dtype=float
+            ),      
         )

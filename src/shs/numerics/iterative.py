@@ -194,129 +194,157 @@ def _sor_update(
 ):
     """
     Perform one vectorized SOR color update.
+
+    The coefficient represents normal conductivity.
+
+    Cells with zero conductivity are treated as insulating
+    for the normal-current problem and are not updated.
+
+    Face conductivities use the harmonic mean. Therefore a
+    face between a conducting cell and a zero-conductivity
+    cell has zero conductivity and cannot carry normal current.
     """
 
-
-    sigma_e = (
-        coefficient[:,1:]
-        +
-        coefficient[:,:-1]
-    ) / 2
-
-
-    sigma_w = sigma_e.copy()
-
-
-    sigma_n = (
-        coefficient[1:,:]
-        +
-        coefficient[:-1,:]
-    ) / 2
-
-
-    sigma_s = sigma_n.copy()
-
-
     #
-    # Interior slices
+    # Interior cells belonging to this SOR color
     #
 
-    interior = mask[1:-1,1:-1]
-
+    interior = mask[1:-1, 1:-1]
 
     if not np.any(interior):
         return
 
+    #
+    # Center conductivity
+    #
 
+    sigma_c = coefficient[1:-1, 1:-1]
 
-    ce = (
-        coefficient[1:-1,2:]
-        +
-        coefficient[1:-1,1:-1]
-    ) / 2
+    #
+    # Neighbor conductivities
+    #
 
+    sigma_e = coefficient[1:-1, 2:]
+    sigma_w = coefficient[1:-1, :-2]
+    sigma_n = coefficient[2:, 1:-1]
+    sigma_s = coefficient[:-2, 1:-1]
 
-    cw = (
-        coefficient[1:-1,:-2]
-        +
-        coefficient[1:-1,1:-1]
-    ) / 2
+    #
+    # Harmonic face conductivity
+    #
+    # sigma_face = 2*sigma_a*sigma_b / (sigma_a + sigma_b)
+    #
+    # When either side is zero, the face conductivity is zero.
+    #
 
+    denominator_e = sigma_c + sigma_e
+    denominator_w = sigma_c + sigma_w
+    denominator_n = sigma_c + sigma_n
+    denominator_s = sigma_c + sigma_s
 
-    cn = (
-        coefficient[2:,1:-1]
-        +
-        coefficient[1:-1,1:-1]
-    ) / 2
+    ce = np.zeros_like(sigma_c)
+    cw = np.zeros_like(sigma_c)
+    cn = np.zeros_like(sigma_c)
+    cs = np.zeros_like(sigma_c)
 
+    np.divide(
+        2.0 * sigma_c * sigma_e,
+        denominator_e,
+        out=ce,
+        where=denominator_e > 0.0,
+    )
 
-    cs = (
-        coefficient[:-2,1:-1]
-        +
-        coefficient[1:-1,1:-1]
-    ) / 2
+    np.divide(
+        2.0 * sigma_c * sigma_w,
+        denominator_w,
+        out=cw,
+        where=denominator_w > 0.0,
+    )
 
+    np.divide(
+        2.0 * sigma_c * sigma_n,
+        denominator_n,
+        out=cn,
+        where=denominator_n > 0.0,
+    )
 
+    np.divide(
+        2.0 * sigma_c * sigma_s,
+        denominator_s,
+        out=cs,
+        where=denominator_s > 0.0,
+    )
+
+    #
+    # Construct the discretized equation:
+    #
+    # ∇ · (σ ∇V) = source
+    #
 
     numerator = (
-
-        ce *
-        V[1:-1,2:]
-        / dx2
-
+        ce * V[1:-1, 2:] / dx2
         +
-
-        cw *
-        V[1:-1,:-2]
-        / dx2
-
+        cw * V[1:-1, :-2] / dx2
         +
-
-        cn *
-        V[2:,1:-1]
-        / dy2
-
+        cn * V[2:, 1:-1] / dy2
         +
-
-        cs *
-        V[:-2,1:-1]
-        / dy2
-
+        cs * V[:-2, 1:-1] / dy2
         -
-
-        source[1:-1,1:-1]
-
+        source[1:-1, 1:-1]
     )
-
 
     denominator = (
-
-        (ce + cw)
-        / dx2
-
+        (ce + cw) / dx2
         +
-
-        (cn + cs)
-        / dy2
-
+        (cn + cs) / dy2
     )
 
+    #
+    # Only cells that actually participate in the
+    # normal-conductivity problem should be updated.
+    #
+    # A zero denominator means there is no conducting
+    # connection to any neighboring cell.
+    #
 
-    new_values = (
-        numerator /
+    valid = (
+        interior
+        &
+        (sigma_c > 0.0)
+        &
+        (denominator > 0.0)
+    )
+
+    if not np.any(valid):
+        return
+
+    #
+    # Calculate the local SOR solution only where
+    # the discretized equation is well-defined.
+    #
+
+    new_values = np.zeros_like(
         denominator
     )
 
-
-    current = V[1:-1,1:-1]
-
-
-    current[interior] += omega * (
-        new_values[interior]
-        -
-        current[interior]
+    np.divide(
+        numerator,
+        denominator,
+        out=new_values,
+        where=denominator > 0.0,
     )
 
+    #
+    # SOR relaxation
+    #
+
+    current = V[1:-1, 1:-1]
+
+    current[valid] += omega * (
+        new_values[valid]
+        -
+        current[valid]
+    )
 def gauss_seidel(
     solution,
     coefficient,
