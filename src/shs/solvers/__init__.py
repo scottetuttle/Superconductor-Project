@@ -15,3 +15,5 @@ from .coupled_solver import (
 )
 
 from .tdgl_solver import tdgl_step
+
+from .coupled import thermal_tdgl_step
