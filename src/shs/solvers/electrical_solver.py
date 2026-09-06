@@ -204,7 +204,7 @@ def electrical_step(
         boundary_values=boundary_values,
         dx=mesh.dx,
         dy=mesh.dy,
-        tolerance=1e-8,
+        tolerance=1e-12,
         max_iterations=10000,
         omega=1.7,
     )

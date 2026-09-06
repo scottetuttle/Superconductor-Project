@@ -4,7 +4,8 @@ SHS Thermal Physics Module
 Defines thermal physics models used by SHS.
 
 Material properties are provided by MaterialMap.
-This module only defines thermal behavior.
+This module only defines thermal behavior and numerical
+controls specific to thermal time integration.
 """
 
 from dataclasses import dataclass
@@ -29,11 +30,18 @@ class ThermalModel:
 
     thermal_relaxation_rate:
         Coupling strength to thermal bath (1/s).
+
+    max_substep:
+        Maximum physical timestep used by the explicit thermal
+        integrator. A larger requested timestep is automatically
+        divided into multiple internal substeps.
     """
 
     bath_temperature: float
 
     thermal_relaxation_rate: float = 0.0
+
+    max_substep: float = 1e-13
 
 
     @staticmethod
@@ -63,3 +71,31 @@ class ThermalModel:
             thermal_conductivity /
             heat_capacity
         )
+
+
+    def validate(self):
+        """
+        Validate thermal model parameters.
+
+        Raises
+        ------
+        ValueError
+            If a thermal parameter is invalid.
+        """
+
+        if self.bath_temperature < 0.0:
+            raise ValueError(
+                "Thermal bath temperature must be non-negative."
+            )
+
+        if self.thermal_relaxation_rate < 0.0:
+            raise ValueError(
+                "Thermal relaxation rate must be non-negative."
+            )
+
+        if self.max_substep <= 0.0:
+            raise ValueError(
+                "Maximum thermal substep must be positive."
+            )
+
+        return True

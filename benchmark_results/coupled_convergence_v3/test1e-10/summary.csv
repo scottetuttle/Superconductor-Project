@@ -1,0 +1,2 @@
+dt,initial_sigma,final_sigma,ordering,converged,physical_steps,failed_steps,total_iterations,average_iterations,final_residual,runtime_seconds,runtime_per_physical_step,final_temperature_mean,final_temperature_max,final_psi_amplitude_mean,final_psi_amplitude_min,final_current_mean,final_heat_mean
+1e-13,1.0,1.0,tdgl_electrical_thermal,True,5,0,13,2.6,8.233303474023249e-09,1.7256426000003557,0.34512852000007116,3.0000000067037225,3.0000040879619285,0.9435245063484589,0.9435244684040126,15633635.307921937,17625846198.130753

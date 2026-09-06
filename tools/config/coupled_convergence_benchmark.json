@@ -1,0 +1,54 @@
+{
+  "simulation_config": "configs/simulations/nbn_hotspot_test.json",
+
+  "dt_values": [
+    1e-13
+  ],
+
+  "sigma_values": [
+    1.0
+  ],
+
+  "physical_steps": 5,
+
+  "max_iterations": 1000,
+
+  "tolerance": 1e-8,
+
+  "order_mode": "one",
+
+  "single_ordering": "tdgl_electrical_thermal",
+
+  "adaptive_relaxation": {
+    "enabled": true,
+    "minimum_sigma": 0.25,
+    "reduction_factor": 0.80,
+    "required_reversals": 3
+  },
+
+  "initial_conditions": {
+    "uniform_psi_one": true
+  },
+
+  "thermal": {
+    "bath_temperature": 3.0,
+    "thermal_relaxation_rate": 0
+  },
+
+  "electrical": {
+    "voltage_left": 1e-3,
+    "voltage_right": 0.0
+  },
+
+  "external_heat": {
+    "enabled": false,
+    "amplitude": 1e-6,
+    "radius_cells": 5.0
+  },
+
+  "output": {
+    "directory": "benchmark_results/coupled_convergence_v3/test1e-10",
+    "save_history": true,
+    "make_plots": true
+  }
+}

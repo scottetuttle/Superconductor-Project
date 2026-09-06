@@ -1,0 +1,22 @@
+[
+  {
+    "dt": 1e-13,
+    "initial_sigma": 1.0,
+    "final_sigma": 1.0,
+    "ordering": "tdgl_electrical_thermal",
+    "converged": true,
+    "physical_steps": 5,
+    "failed_steps": 0,
+    "total_iterations": 13,
+    "average_iterations": 2.6,
+    "final_residual": 8.233303474023249e-09,
+    "runtime_seconds": 1.7256426000003557,
+    "runtime_per_physical_step": 0.34512852000007116,
+    "final_temperature_mean": 3.0000000067037225,
+    "final_temperature_max": 3.0000040879619285,
+    "final_psi_amplitude_mean": 0.9435245063484589,
+    "final_psi_amplitude_min": 0.9435244684040126,
+    "final_current_mean": 15633635.307921937,
+    "final_heat_mean": 17625846198.130753
+  }
+]

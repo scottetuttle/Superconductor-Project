@@ -1,0 +1,14 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+
+[project]
+name = "shs"
+version = "0.1.0"
+description = "Superconducting Hotspot Simulator"
+requires-python = ">=3.10"
+
+
+[tool.setuptools.packages.find]
+where = ["src"]

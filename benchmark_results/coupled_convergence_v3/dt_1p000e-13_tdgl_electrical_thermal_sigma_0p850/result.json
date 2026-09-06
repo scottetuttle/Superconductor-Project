@@ -1,0 +1,21 @@
+{
+  "dt": 1e-13,
+  "ordering": "tdgl_electrical_thermal",
+  "initial_sigma": 0.85,
+  "final_sigma": 0.85,
+  "converged": false,
+  "steps": 1,
+  "failed_steps": 1,
+  "iterations_total": 200,
+  "average_iterations": 200.0,
+  "maximum_iterations": 200,
+  "runtime_seconds": 93.25464860000648,
+  "final_residual": 1.0,
+  "oscillations_detected": 0,
+  "final_temperature_mean": 3.0000000002131055,
+  "final_temperature_max": 3.0000001300658785,
+  "final_psi_mean_abs": 0.9866240814846525,
+  "final_current_mean_abs": 4433858.400236682,
+  "final_joule_heating_mean": 5014244999.825501,
+  "history_file": "benchmark_results\\coupled_convergence_v3\\dt_1p000e-13_tdgl_electrical_thermal_sigma_0p850\\residual_history.csv"
+}

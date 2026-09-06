@@ -6,7 +6,6 @@ import json
 from dataclasses import dataclass
 from pathlib import Path
 
-
 @dataclass
 class SimulationConfig:
 
@@ -23,6 +22,8 @@ class SimulationConfig:
     dt: float
 
     boundaries: dict
+
+    
 
 
 def load_simulation(filepath):
