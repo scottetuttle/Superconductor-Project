@@ -13,17 +13,14 @@ where:
 
     D = nabla - i A
 
-The current implementation uses explicit Euler
-time integration.
+The implementation uses explicit Euler time integration.
 
-The TDGL parameter u is supplied by TDGLParameters.
-Material properties provide the physical scales needed
-to construct the dimensionless equation.
+Because the requested physical timestep may be larger than
+the stable normalized TDGL timestep, the solver automatically
+subdivides the requested timestep into internal TDGL substeps.
 """
 
 import numpy as np
-
-from shs.config.simulation_state import Simulation
 
 from shs.tdgl.model import TDGLModel
 from shs.tdgl.operators import covariant_laplacian
@@ -39,15 +36,23 @@ def tdgl_step(
     tdgl_model,
 ):
     """
-    Advance the TDGL order parameter by one physical timestep.
+    Advance the TDGL state by one physical timestep.
 
     Parameters
     ----------
+    simulation:
+        Complete SHS simulation state.
+
     dt:
         Physical timestep in seconds.
 
-    The timestep is converted internally to the
-    dimensionless TDGL timescale.
+    tdgl_model:
+        TDGL model containing the dimensionless parameters.
+
+    Returns
+    -------
+    Fields
+        Updated simulation fields.
     """
 
     if dt <= 0.0:
@@ -59,9 +64,34 @@ def tdgl_step(
     material_map = simulation.material_map
     mesh = simulation.mesh
 
+    #
+    # Validate TDGL parameters before integration.
+    #
+
+    tdgl_model.parameters.validate()
+
+    #
+    # Material scales.
+    #
+
     material = material_map.materials[0]
 
     Tc = material.Tc
+    xi = material.coherence_length
+
+    if Tc <= 0.0:
+        raise ValueError(
+            "Critical temperature Tc must be positive."
+        )
+
+    if xi <= 0.0:
+        raise ValueError(
+            "Coherence length xi must be positive."
+        )
+
+    #
+    # Convert physical time to normalized TDGL time.
+    #
 
     dt_dimensionless = (
         tdgl_model.dimensional_to_normalized_time(
@@ -75,23 +105,27 @@ def tdgl_step(
             "TDGL produced a non-finite normalized timestep."
         )
 
+    dt_dimensionless = float(
+        np.max(dt_dimensionless)
+    )
+
+    #
+    # Maximum stable/allowed normalized timestep.
+    #
+
     max_dt = (
         tdgl_model.parameters.max_normalized_timestep
     )
-    tau_GL = tdgl_model.characteristic_time(Tc)
 
     if max_dt <= 0.0:
         raise ValueError(
             "Maximum normalized TDGL timestep must be positive."
         )
 
-    # Use the largest local normalized timestep so that
-    # the entire spatial domain is advanced with a stable
-    # explicit timestep.
-
-    dt_dimensionless = np.max(
-        dt_dimensionless
-    )
+    #
+    # Divide the requested physical timestep into
+    # stable internal normalized substeps.
+    #
 
     number_of_steps = max(
         1,
@@ -100,7 +134,7 @@ def tdgl_step(
                 dt_dimensionless /
                 max_dt
             )
-        )
+        ),
     )
 
     sub_dt = (
@@ -108,18 +142,14 @@ def tdgl_step(
         number_of_steps
     )
 
+    #
+    # Initial order parameter.
+    #
+
     psi = fields.psi.copy()
 
     #
-    # Validate TDGL parameters.
-    #
-
-    tdgl_model.parameters.validate()
-
-    #
     # Reduced temperature.
-    #
-    # t = T / Tc
     #
 
     reduced_temperature = (
@@ -128,7 +158,7 @@ def tdgl_step(
     )
 
     #
-    # Electromagnetic vector potential.
+    # Vector potential.
     #
 
     Ax = fields.vector_potential_x
@@ -137,33 +167,16 @@ def tdgl_step(
     #
     # Normalize spatial coordinates by coherence length.
     #
-    # x' = x / xi
-    #
-    # Therefore:
-    #
-    # dx' = dx / xi
-    #
-
-    material = material_map.materials[0]
-
-    xi = material.coherence_length
-
-    if xi <= 0.0:
-        raise ValueError(
-            "Coherence length xi must be positive."
-        )
 
     dx_dimensionless = (
-        mesh.dx / xi
+        mesh.dx /
+        xi
     )
 
     dy_dimensionless = (
-        mesh.dy / xi
+        mesh.dy /
+        xi
     )
-
-    #
-    # Gauge-covariant kinetic term.
-    #
 
     #
     # TDGL relaxation parameter.
@@ -171,15 +184,9 @@ def tdgl_step(
 
     u = tdgl_model.parameters.u
 
-
     #
-    # Explicit Euler TDGL integration.
+    # Explicit Euler integration.
     #
-    # The physical timestep has been converted into
-    # normalized TDGL time and divided into stable
-    # substeps.
-    #
-
     for _ in range(number_of_steps):
 
         #
@@ -194,11 +201,8 @@ def tdgl_step(
             dy_dimensionless,
         )
 
-
         #
         # Linear GL contribution.
-        #
-        # (1 - T/Tc) psi
         #
 
         linear_term = (
@@ -206,18 +210,15 @@ def tdgl_step(
             reduced_temperature
         ) * psi
 
-
         #
         # Nonlinear GL contribution.
         #
-        # |psi|^2 psi
-        #
 
         nonlinear_term = (
-            np.abs(psi)**2 *
+            np.abs(psi) ** 2
+            *
             psi
         )
-
 
         #
         # TDGL evolution equation.
@@ -231,7 +232,6 @@ def tdgl_step(
             nonlinear_term
         ) / u
 
-
         #
         # Numerical sanity check.
         #
@@ -241,23 +241,25 @@ def tdgl_step(
                 "TDGL produced non-finite derivative values."
             )
 
-
         #
         # Explicit Euler substep.
         #
 
         psi = (
             psi +
-            sub_dt * dpsi_dt
+            sub_dt *
+            dpsi_dt
         )
-
 
     #
     # Store completed physical timestep.
     #
 
     fields.psi = psi
-        #
+
+    #
+    # Apply superconducting boundary condition.
+    #
 
     fields.psi = apply_insulating_boundary(
         fields.psi,
@@ -266,11 +268,10 @@ def tdgl_step(
         dx_dimensionless,
         dy_dimensionless,
     )
-# Supercurrent density.
-#
-# Calculate the superconducting current
-# associated with the updated order parameter.
-#
+
+    #
+    # Calculate superconducting current.
+    #
 
     supercurrent_x, supercurrent_y = (
         tdgl_model.supercurrent_density(
@@ -289,8 +290,9 @@ def tdgl_step(
     fields.supercurrent_density_y = (
         supercurrent_y
     )
+
     #
-    # Numerical sanity check after update.
+    # Final numerical sanity check.
     #
 
     if not np.all(np.isfinite(fields.psi)):

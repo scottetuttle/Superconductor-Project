@@ -4,10 +4,10 @@
     "geometry": "NbN_film.json",
     "material": "NbN.json",
 
-    "temperature": 3.0,
+    "temperature": 9.0,
 
     "current": {
-        "value": 0.001,
+        "value": 0.01,
         "units": "A"
     },
 
@@ -15,22 +15,51 @@
         "duration": 1e-6,
         "dt": 1e-9
     },
+
+    "thermal": {
+        "bath_temperature": 9.0,
+        "thermal_relaxation_rate": 1,
+        "max_substep": 1e-13
+    },
+
+    "electrical": {
+        "voltage_left": 0.001,
+        "voltage_right": 0.0,
+
+        "solver": {
+            "tolerance": 1e-10,
+            "max_iterations": 10000,
+            "omega": 1.7
+        }
+    },
+
+    "tdgl": {
+        "u": 5.79,
+        "gamma": 0.0,
+        "kappa": 1.0,
+        "max_normalized_timestep": 0.01
+    },
+
     "boundaries": {
         "left": {
             "type": "fixed_temperature",
-            "temperature": 4.2
+            "temperature": 5.0
         },
+
         "right": {
             "type": "fixed_temperature",
-            "temperature": 4.2
+            "temperature": 5.0
         },
+
         "top": {
             "type": "insulating"
         },
+
         "bottom": {
             "type": "insulating"
         }
     },
+
     "tdgl_boundaries": {
         "left": {
             "type": "insulating"
@@ -47,5 +76,5 @@
         "bottom": {
             "type": "insulating"
         }
-}
+    }
 }

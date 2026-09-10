@@ -5,29 +5,29 @@ Solves:
 
     ∇ · (σ ∇V) = 0
 
-then calculates:
+with superconducting-current coupling:
+
+    ∇ · (Jn + Js) = 0
+
+where:
+
+    Jn = σE
 
     E = -∇V
 
-    J = σE
-
-
-Uses iterative numerical solvers
-through the SHS numerics layer.
+The solver uses the Red-Black SOR numerical solver.
+Numerical solver controls are supplied explicitly so that
+the coupled solver or numerical controller can adjust them.
 """
 
-
 import numpy as np
-
 
 from shs.physics import Fields
 
 from shs.mapping.contact_map import ContactMap
-
 from shs.mapping.material_map import MaterialMap
 
 from shs.numerics import red_black_sor
-
 
 
 def electrical_step(
@@ -40,25 +40,53 @@ def electrical_step(
     superconducting_fraction=None,
     superconducting_current_x=None,
     superconducting_current_y=None,
+    solver_tolerance: float = 1e-10,
+    solver_max_iterations: int = 10000,
+    solver_omega: float = 1.7,
 ):
     """
     Perform one electrical transport solve.
 
-    Steps:
+    Parameters
+    ----------
+    solver_tolerance:
+        Convergence tolerance for Red-Black SOR.
 
-    1. Build voltage boundary conditions
-    2. Solve conductivity PDE
-    3. Calculate electric field
-    4. Calculate current density
+    solver_max_iterations:
+        Maximum number of Red-Black SOR iterations.
 
+    solver_omega:
+        Relaxation parameter for Red-Black SOR.
     """
 
+    if (
+        not np.isfinite(solver_tolerance)
+        or solver_tolerance <= 0.0
+    ):
+        raise ValueError(
+            "Electrical solver tolerance must be "
+            "positive and finite."
+        )
+
+    if solver_max_iterations <= 0:
+        raise ValueError(
+            "Electrical solver maximum iterations "
+            "must be positive."
+        )
+
+    if (
+        not np.isfinite(solver_omega)
+        or not 0.0 < solver_omega < 2.0
+    ):
+        raise ValueError(
+            "Electrical solver omega must be finite "
+            "and satisfy 0 < omega < 2."
+        )
 
     V = fields.voltage.copy()
 
-
     #
-    # Contact masks
+    # Contact masks.
     #
 
     left = contact_map.contact_masks.get(
@@ -69,17 +97,13 @@ def electrical_step(
         "right_current"
     )
 
-
     if left is None or right is None:
-
         raise ValueError(
             "Current contacts missing."
         )
 
-
-
     #
-    # Boundary conditions
+    # Boundary conditions.
     #
 
     boundary_mask = (
@@ -87,24 +111,14 @@ def electrical_step(
         right
     )
 
+    boundary_values = np.zeros_like(V)
 
-    boundary_values = np.zeros_like(
-        V
-    )
+    boundary_values[left] = voltage_left
 
-
-    boundary_values[left] = (
-        voltage_left
-    )
-
-    boundary_values[right] = (
-        voltage_right
-    )
-
-
+    boundary_values[right] = voltage_right
 
     #
-    # Electrical conductivity
+    # Superconducting current defaults.
     #
 
     if superconducting_current_x is None:
@@ -116,28 +130,39 @@ def electrical_step(
     if superconducting_fraction is None:
         superconducting_fraction = np.zeros_like(V)
 
+    #
+    # Normal fraction.
+    #
+
     normal_fraction = np.maximum(
-        1.0 - superconducting_fraction,
+        1.0 -
+        superconducting_fraction,
         0.0,
     )
+
+    #
+    # Normal conductivity.
+    #
 
     sigma = (
         material_map.electrical_conductivity
         *
         normal_fraction
     )
+
     #
-# Perfectly superconducting limit
-#
-# If there is no normal conductivity anywhere,
-# there is no normal-current potential equation
-# to solve.
-#
+    # Perfectly superconducting limit.
+    #
 
     if np.all(sigma <= 0.0):
 
-        fields.electric_field_x = np.zeros_like(V)
-        fields.electric_field_y = np.zeros_like(V)
+        fields.electric_field_x = (
+            np.zeros_like(V)
+        )
+
+        fields.electric_field_y = (
+            np.zeros_like(V)
+        )
 
         fields.normal_current_density_x = (
             np.zeros_like(V)
@@ -155,46 +180,61 @@ def electrical_step(
             superconducting_current_y.copy()
         )
 
-        fields.heat_source = np.zeros_like(V)
+        fields.heat_source = (
+            np.zeros_like(V)
+        )
 
         fields.electrical_solver_iterations = 0
+
         fields.electrical_solver_residual = 0.0
 
         return fields
 
-
-
-
-
     #
-    # Solve:
-    #
-    # ∇ · σ∇V = 0
-    #
-    # J=Js​+Jn
-    #
-    # ∇⋅(Js​+σn​E)=0.
+    # Superconducting-current divergence source.
     #
 
     source = np.zeros_like(V)
 
     source[1:-1, 1:-1] = -(
         (
-            superconducting_current_x[1:-1, 2:]
+            superconducting_current_x[
+                1:-1,
+                2:
+            ]
             -
-            superconducting_current_x[1:-1, :-2]
+            superconducting_current_x[
+                1:-1,
+                :-2
+            ]
         )
         /
-        (2.0 * mesh.dx)
+        (
+            2.0 *
+            mesh.dx
+        )
         +
         (
-            superconducting_current_y[2:, 1:-1]
+            superconducting_current_y[
+                2:,
+                1:-1
+            ]
             -
-            superconducting_current_y[:-2, 1:-1]
+            superconducting_current_y[
+                :-2,
+                1:-1
+            ]
         )
         /
-        (2.0 * mesh.dy)
+        (
+            2.0 *
+            mesh.dy
+        )
     )
+
+    #
+    # Solve electrical potential.
+    #
 
     result = red_black_sor(
         solution=V,
@@ -204,59 +244,47 @@ def electrical_step(
         boundary_values=boundary_values,
         dx=mesh.dx,
         dy=mesh.dy,
-        tolerance=1e-12,
-        max_iterations=10000,
-        omega=1.7,
+        tolerance=solver_tolerance,
+        max_iterations=solver_max_iterations,
+        omega=solver_omega,
     )
 
-
-
-    fields.voltage = (
-        result.field
-    )
-
-
+    fields.voltage = result.field
 
     #
-    # Electric field
+    # Electric field.
     #
 
     V = fields.voltage
-
 
     Ex = np.zeros_like(V)
 
     Ey = np.zeros_like(V)
 
-
-
-    Ex[:,1:-1] = -(
-        V[:,2:]
+    Ex[:, 1:-1] = -(
+        V[:, 2:]
         -
-        V[:,:-2]
+        V[:, :-2]
     ) / (
-        2 * mesh.dx
+        2.0 *
+        mesh.dx
     )
 
-
-    Ey[1:-1,:] = -(
-        V[2:,:]
+    Ey[1:-1, :] = -(
+        V[2:, :]
         -
-        V[:-2,:]
+        V[:-2, :]
     ) / (
-        2 * mesh.dy
+        2.0 *
+        mesh.dy
     )
-
-
 
     fields.electric_field_x = Ex
 
     fields.electric_field_y = Ey
 
-
-
     #
-    # Current density
+    # Normal current density.
     #
 
     normal_current_x = (
@@ -268,14 +296,18 @@ def electrical_step(
         sigma *
         Ey
     )
+
     fields.normal_current_density_x = (
         normal_current_x
     )
 
     fields.normal_current_density_y = (
         normal_current_y
-    )    
+    )
 
+    #
+    # Total current density.
+    #
 
     fields.current_density_x = (
         normal_current_x
@@ -288,10 +320,9 @@ def electrical_step(
         +
         superconducting_current_y
     )
-        #
-    # Joule heating
+
     #
-    # Q = J^2 rho
+    # Joule heating.
     #
 
     fields.heat_source = (
@@ -300,23 +331,16 @@ def electrical_step(
         normal_current_y * Ey
     )
 
-
     #
-    # Store solver information
-    #
-    # Future:
-    # add to SimulationState
+    # Electrical diagnostics.
     #
 
     fields.electrical_solver_iterations = (
         result.iterations
     )
 
-
     fields.electrical_solver_residual = (
         result.residual
     )
-
-
 
     return fields

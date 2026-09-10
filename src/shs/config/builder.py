@@ -1,8 +1,14 @@
 """
 Simulation construction pipeline.
 
-Converts a simulation configuration file into
-a complete SHS simulation object.
+Converts a simulation configuration file into a complete
+SHS simulation object.
+
+The builder is responsible for constructing the static
+simulation infrastructure and initial physical state.
+
+Physics models and numerical solvers remain responsible
+for evolving that state.
 """
 
 from pathlib import Path
@@ -39,26 +45,32 @@ from shs.tdgl.boundary import (
 
 from shs.tdgl.initialization import equilibrium_superconducting_state
 
+
 def build_simulation(filepath):
     """
-    Construct a complete SHS simulation from a
-    simulation configuration file.
+    Build a complete SHS simulation from a JSON configuration.
+
+    Parameters
+    ----------
+    filepath:
+        Path to the simulation configuration.
+
+    Returns
+    -------
+    Simulation
+        Fully initialized simulation object.
     """
 
-    CONFIG_ROOT = Path("configs")
-
-    #
-    # Simulation configuration
-    #
+    config_root = Path("configs")
 
     config = load_simulation(filepath)
 
     #
-    # Geometry
+    # Geometry.
     #
 
     geometry_path = (
-        CONFIG_ROOT /
+        config_root /
         "geometry" /
         config.geometry
     )
@@ -67,12 +79,16 @@ def build_simulation(filepath):
         geometry_path
     )
 
+    #
+    # Mesh.
+    #
+
     mesh = create_mesh(
         geometry
     )
 
     #
-    # Region mapping
+    # Region mapping.
     #
 
     region_map = build_region_map(
@@ -81,14 +97,12 @@ def build_simulation(filepath):
     )
 
     #
-    # Material mapping
+    # Material mapping.
     #
 
-    material_name = (
-        config.material.replace(
-            ".json",
-            ""
-        )
+    material_name = config.material.replace(
+        ".json",
+        ""
     )
 
     material = get_material(
@@ -101,7 +115,7 @@ def build_simulation(filepath):
     )
 
     #
-    # Contact mapping
+    # Contact mapping.
     #
 
     contact_map = build_contact_map(
@@ -110,7 +124,7 @@ def build_simulation(filepath):
     )
 
     #
-    # Runtime fields
+    # Initial superconducting order parameter.
     #
 
     reduced_temperature = (
@@ -118,31 +132,36 @@ def build_simulation(filepath):
         material_map.Tc
     )
 
-    initial_psi = equilibrium_superconducting_state(
-        shape=(mesh.ny, mesh.nx),
-        reduced_temperature=float(
-            reduced_temperature[0, 0]
-        ),
+    initial_psi = (
+        equilibrium_superconducting_state(
+            shape=(mesh.ny, mesh.nx),
+            reduced_temperature=float(
+                reduced_temperature[0, 0]
+            ),
+        )
     )
+
+    #
+    # Simulation fields.
+    #
 
     fields = Fields.create(
         mesh=mesh,
         initial_temperature=config.temperature,
         initial_psi=initial_psi,
     )
+
     #
-    # Thermal / electrical boundaries
+    # Thermal boundary conditions.
     #
 
     boundaries = BoundarySet()
 
-    for side_name, values in config.boundaries.items():
-
+    for side_name, values in (
+        config.boundaries.items()
+    ):
         boundary = BoundaryCondition(
-
-            side=BoundarySide(
-                side_name
-            ),
+            side=BoundarySide(side_name),
 
             type=BoundaryType(
                 values["type"]
@@ -166,18 +185,26 @@ def build_simulation(filepath):
         )
 
     #
-    # TDGL boundaries
+    # TDGL boundary conditions.
     #
-
-    # TDGL boundaries
+    # Unlike the previous implementation, use the
+    # actual TDGL boundary configuration supplied by
+    # the simulation JSON.
+    #
 
     tdgl_boundaries = TDGLBoundarySet()
 
-    for side_name, values in config.boundaries.items():
-
+    for side_name, values in (
+        config.tdgl_boundaries.items()
+    ):
         tdgl_boundary = TDGLBoundaryCondition(
-            side=TDGLBoundarySide(side_name),
-            type=TDGLBoundaryType.INSULATING,
+            side=TDGLBoundarySide(
+                side_name
+            ),
+
+            type=TDGLBoundaryType(
+                values["type"]
+            ),
         )
 
         tdgl_boundaries.add(
@@ -185,11 +212,10 @@ def build_simulation(filepath):
         )
 
     #
-    # Complete simulation
+    # Complete simulation object.
     #
 
-    return Simulation(
-
+    simulation = Simulation(
         config=config,
 
         geometry=geometry,
@@ -208,3 +234,11 @@ def build_simulation(filepath):
 
         tdgl_boundaries=tdgl_boundaries,
     )
+
+    #
+    # Validate the complete constructed simulation.
+    #
+
+    simulation.validate()
+
+    return simulation

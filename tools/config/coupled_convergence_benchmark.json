@@ -1,54 +1,131 @@
 {
-  "simulation_config": "configs/simulations/nbn_hotspot_test.json",
+    "simulation_config": "configs/simulations/nbn_hotspot_test.json",
 
-  "dt_values": [
-    1e-13
-  ],
+    "physical_steps": 100,
 
-  "sigma_values": [
-    1.0
-  ],
+    "dt_values": [
+        1e-12
+    ],
 
-  "physical_steps": 5,
+    "sigma_values": [
+        1.0
+    ],
 
-  "max_iterations": 1000,
+    "order_mode": "one",
 
-  "tolerance": 1e-8,
+    "single_ordering": "electrical_tdgl_thermal",
 
-  "order_mode": "one",
+    "convergence": {
+        "tolerance": 1e-3,
 
-  "single_ordering": "tdgl_electrical_thermal",
+        "max_iterations": 50,
 
-  "adaptive_relaxation": {
-    "enabled": true,
-    "minimum_sigma": 0.25,
-    "reduction_factor": 0.80,
-    "required_reversals": 3
-  },
+        "check_interval": 10,
 
-  "initial_conditions": {
-    "uniform_psi_one": true
-  },
+        "prediction_window": 10,
 
-  "thermal": {
-    "bath_temperature": 3.0,
-    "thermal_relaxation_rate": 0
-  },
+        "reasonable_iterations": 50
+    },
 
-  "electrical": {
-    "voltage_left": 1e-3,
-    "voltage_right": 0.0
-  },
+    "adaptive_relaxation": {
+        "enabled": true,
 
-  "external_heat": {
-    "enabled": false,
-    "amplitude": 1e-6,
-    "radius_cells": 5.0
-  },
+        "minimum_sigma": 0.25,
 
-  "output": {
-    "directory": "benchmark_results/coupled_convergence_v3/test1e-10",
-    "save_history": true,
-    "make_plots": true
-  }
+        "reduction_factor": 0.8,
+
+        "required_reversals": 2
+    },
+
+    "adaptive_controller": {
+        "enabled": true,
+
+        "component_prediction": {
+            "minimum_confidence": 0.5,
+
+            "reasonable_iterations": 20,
+
+            "stall_ratio": 0.999,
+
+            "divergence_ratio": 1.0
+        },
+
+        "adaptation": {
+            "electrical_tolerance_factor": 0.5,
+
+            "tdgl_max_normalized_timestep_factor": 0.50,
+
+            "thermal_max_substep_factor": 0.5,
+
+            "physical_dt_factor": 0.50
+        },
+
+        "bounds": {
+            "electrical_tolerance_min": 1e-15,
+
+            "electrical_tolerance_max": 1e-5,
+
+            "tdgl_max_normalized_timestep_min": 1e-3,
+
+            "tdgl_max_normalized_timestep_max": 1,
+
+            "thermal_max_substep_min": 1e-16,
+
+            "thermal_max_substep_max": 1e-9,
+
+            "physical_dt_min": 1e-18
+        },
+
+        "retry": {
+            "max_restarts_per_timestep": 10,
+
+            "max_total_restarts": 100
+        },
+
+        "behavior": {
+            "adapt_one_component": true,
+
+            "adapt_two_components": true,
+
+            "reduce_dt_when_all_components_problematic": true,
+
+            "reduce_sigma_only_for_oscillation": true,
+
+            "retain_successful_parameters": true
+        }
+    },
+
+    "initial_conditions": {
+        "uniform_psi_one": true,
+
+        "initial_tdgl_max_normalized_timestep": 0.1
+    },
+
+    "thermal": {
+        "bath_temperature": 9.0,
+
+        "thermal_relaxation_rate": 1e5
+    },
+
+    "electrical": {
+        "voltage_left": 0.1,
+
+        "voltage_right": 0.0
+    },
+
+    "external_heat": {
+        "enabled": true,
+
+        "amplitude": 1e16,
+
+        "radius_cells": 20.0
+    },
+
+    "output": {
+        "directory": "benchmark_results/coupled_convergence/test5",
+
+        "save_history": true,
+
+        "make_plots": true
+    }
 }

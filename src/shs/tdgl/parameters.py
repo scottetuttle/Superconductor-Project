@@ -50,9 +50,13 @@ class TDGLParameters:
 
     reduced_temperature:
         Default reduced temperature T/Tc.
-        This is primarily provided for standalone model
-        calculations and tests. The full solver obtains
-        temperature from the simulation fields.
+        The full solver obtains temperature from the
+        simulation fields.
+
+    max_normalized_timestep:
+        Maximum normalized timestep used by the explicit
+        TDGL integrator. Larger physical timesteps are
+        automatically divided into internal substeps.
     """
 
     u: float = 5.79
@@ -63,7 +67,7 @@ class TDGLParameters:
 
     reduced_temperature: float = 0.0
 
-    max_normalized_timestep: float = 0.01
+    max_normalized_timestep: float = 0.1
 
     def validate(self):
         """
@@ -72,7 +76,7 @@ class TDGLParameters:
         Raises
         ------
         ValueError
-            If a parameter is physically invalid.
+            If a parameter is physically or numerically invalid.
         """
 
         if self.u <= 0.0:
@@ -83,6 +87,11 @@ class TDGLParameters:
         if self.kappa <= 0.0:
             raise ValueError(
                 "Ginzburg-Landau parameter kappa must be positive."
+            )
+
+        if self.max_normalized_timestep <= 0.0:
+            raise ValueError(
+                "Maximum normalized TDGL timestep must be positive."
             )
 
         return True
