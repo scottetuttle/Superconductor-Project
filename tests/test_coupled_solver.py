@@ -76,6 +76,7 @@ def test_coupled_electrothermal():
     thermal_model = ThermalModel(
         bath_temperature=3.0,
         thermal_relaxation_rate=1.0,
+        max_substep=1e-10,
 )
 
 
@@ -83,7 +84,7 @@ def test_coupled_electrothermal():
         simulation,
         thermal_model,
         steps=5,
-        dt=1e-6,
+        dt=1e-12,
     )
 
 

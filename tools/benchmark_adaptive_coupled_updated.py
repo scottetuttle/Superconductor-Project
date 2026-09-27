@@ -65,10 +65,11 @@ import numpy as np
 from shs.config.builder import build_simulation
 
 from shs.solvers.tdgl_solver import tdgl_step
-from shs.solvers.electrical_solver import electrical_step
+from shs.solvers.electrical_solver import electrical_simulation_step
 from shs.solvers.thermal_solver import thermal_step
 
 from shs.physics.thermal import ThermalModel
+from shs.physics.diagnostics import evaluate_physics_diagnostics
 
 from shs.tdgl import TDGLModel
 from shs.tdgl.parameters import TDGLParameters
@@ -80,9 +81,24 @@ from shs.numerics.convergence import (
 )
 
 
-CONFIG_PATH = Path(
-    "tools/config/coupled_convergence_benchmark.json"
+CONFIG_PATH = (
+    Path(__file__).resolve().parent
+    / "config"
+    / "coupled_convergence_benchmark.json"
 )
+from shs.utils.output import reserve_output_directory
+
+# Loaded from the selected benchmark configuration in main(). Plot helpers and
+# residual utilities are also called independently by tests, so these values
+# are initialized from the repository's standard benchmark configuration.
+with CONFIG_PATH.open("r", encoding="utf-8") as _config_file:
+    _DEFAULT_BENCHMARK_CONFIG = json.load(_config_file)
+
+_NUMERICAL_SAFEGUARDS = _DEFAULT_BENCHMARK_CONFIG["numerical_safeguards"]
+_PLOT_DPI = int(_DEFAULT_BENCHMARK_CONFIG["output"]["plot_dpi"])
+_ADAPTATION_EFFECTIVENESS = _DEFAULT_BENCHMARK_CONFIG[
+    "adaptive_controller"
+]["adaptation_effectiveness"]
 
 
 DEFAULT_ORDERINGS = (
@@ -98,15 +114,6 @@ DEFAULT_ORDERINGS = (
 # ============================================================================
 # Data structures
 # ============================================================================
-
-
-@dataclass
-class TrialState:
-    temperature: np.ndarray
-    psi: np.ndarray
-    voltage: np.ndarray
-    vector_potential_x: np.ndarray
-    vector_potential_y: np.ndarray
 
 
 @dataclass
@@ -177,6 +184,9 @@ class CouplingResult:
     problematic_components_history: list[list[str]]
 
     timing_history: dict[str, list[float]]
+    electrical_iteration_history: list[int]
+    tdgl_substep_history: list[int]
+    thermal_substep_history: list[int]
 
 
 # ============================================================================
@@ -187,17 +197,21 @@ class CouplingResult:
 def relative_residual(
     old,
     new,
-    floor=1e-14,
+    scale=1.0,
+    floor=None,
 ):
+    if floor is None:
+        floor = float(_NUMERICAL_SAFEGUARDS["residual_floor"])
     old = np.asarray(old)
     new = np.asarray(new)
 
-    numerator = np.linalg.norm(
-        (new - old).ravel()
-    )
+    if not np.isfinite(scale) or scale <= 0:
+        raise ValueError("Residual scale must be positive and finite.")
+    numerator = np.sqrt(np.mean(np.abs(new - old) ** 2))
 
     denominator = max(
-        np.linalg.norm(old.ravel()),
+        np.sqrt(np.mean(np.abs(old) ** 2)),
+        scale,
         floor,
     )
 
@@ -209,67 +223,54 @@ def relative_residual(
 def copy_trial_state(
     simulation,
 ):
-    fields = simulation.fields
-
-    return TrialState(
-        temperature=fields.temperature.copy(),
-        psi=fields.psi.copy(),
-        voltage=fields.voltage.copy(),
-        vector_potential_x=(
-            fields.vector_potential_x.copy()
-        ),
-        vector_potential_y=(
-            fields.vector_potential_y.copy()
-        ),
-    )
+    # A retry checkpoint must include derived current and heat fields as well
+    # as the primary unknowns. Otherwise a failed attempt contaminates the
+    # next retry through stale supercurrent or Joule-heating arrays.
+    return copy.deepcopy(simulation.fields)
 
 
 def apply_trial_state(
     simulation,
     trial,
 ):
-    fields = simulation.fields
-
-    fields.temperature = trial.temperature.copy()
-    fields.psi = trial.psi.copy()
-    fields.voltage = trial.voltage.copy()
-
-    fields.vector_potential_x = (
-        trial.vector_potential_x.copy()
-    )
-
-    fields.vector_potential_y = (
-        trial.vector_potential_y.copy()
+    simulation.fields.__dict__.update(
+        copy.deepcopy(vars(trial))
     )
 
 
 def calculate_residuals(
     old,
     new,
+    scales,
 ):
     temperature = relative_residual(
         old.temperature,
         new.temperature,
+        scales["temperature"],
     )
 
     psi = relative_residual(
         old.psi,
         new.psi,
+        scales["psi"],
     )
 
     voltage = relative_residual(
         old.voltage,
         new.voltage,
+        scales["voltage"],
     )
 
     ax = relative_residual(
         old.vector_potential_x,
         new.vector_potential_x,
+        scales["vector_potential_x"],
     )
 
     ay = relative_residual(
         old.vector_potential_y,
         new.vector_potential_y,
+        scales["vector_potential_y"],
     )
 
     total = max(
@@ -295,52 +296,27 @@ def relax_trial_state(
     calculated,
     sigma,
 ):
-    return TrialState(
-        temperature=(
-            old_trial.temperature
-            + sigma
-            * (
-                calculated.temperature
-                - old_trial.temperature
-            )
-        ),
-
-        psi=(
-            old_trial.psi
-            + sigma
-            * (
-                calculated.psi
-                - old_trial.psi
-            )
-        ),
-
-        voltage=(
-            old_trial.voltage
-            + sigma
-            * (
-                calculated.voltage
-                - old_trial.voltage
-            )
-        ),
-
-        vector_potential_x=(
-            old_trial.vector_potential_x
-            + sigma
-            * (
-                calculated.vector_potential_x
-                - old_trial.vector_potential_x
-            )
-        ),
-
-        vector_potential_y=(
-            old_trial.vector_potential_y
-            + sigma
-            * (
-                calculated.vector_potential_y
-                - old_trial.vector_potential_y
-            )
-        ),
+    relaxed = copy.deepcopy(calculated)
+    exchanged = (
+        "temperature",
+        "psi",
+        "voltage",
+        "vector_potential_x",
+        "vector_potential_y",
+        "supercurrent_density_x",
+        "supercurrent_density_y",
+        "joule_heat_source",
     )
+    for name in exchanged:
+        old_value = getattr(old_trial, name, None)
+        new_value = getattr(calculated, name, None)
+        if old_value is None or new_value is None:
+            continue
+        setattr(relaxed, name, old_value + sigma * (new_value - old_value))
+    if relaxed.external_heat_source is not None:
+        joule = 0 if relaxed.joule_heat_source is None else relaxed.joule_heat_source
+        relaxed.heat_source = relaxed.external_heat_source + joule
+    return relaxed
 
 
 def state_update_directions(
@@ -388,8 +364,8 @@ def detect_oscillation(
         new_norm = np.linalg.norm(new)
 
         if (
-            old_norm < 1e-14
-            or new_norm < 1e-14
+            old_norm < float(_NUMERICAL_SAFEGUARDS["residual_floor"])
+            or new_norm < float(_NUMERICAL_SAFEGUARDS["residual_floor"])
         ):
             continue
 
@@ -404,6 +380,43 @@ def detect_oscillation(
     return False
 
 
+def scaled_update_vector(delta, scales):
+    """Flatten coupling updates into a dimensionless, mesh-independent vector."""
+    scale_names = {
+        "temperature": "temperature",
+        "psi": "psi",
+        "voltage": "voltage",
+        "ax": "vector_potential_x",
+        "ay": "vector_potential_y",
+    }
+    pieces = []
+    for name, values in delta.items():
+        values = np.asarray(values)
+        scale = float(scales[scale_names[name]])
+        pieces.append(values / (scale * np.sqrt(values.size)))
+    return np.concatenate(pieces)
+
+
+def aitken_relaxation(
+    previous_update,
+    current_update,
+    previous_sigma,
+    minimum,
+    maximum,
+):
+    """Return a bounded Aitken delta-squared fixed-point relaxation."""
+    change = current_update - previous_update
+    denominator = float(np.vdot(change, change).real)
+    if denominator <= float(_NUMERICAL_SAFEGUARDS["residual_floor"]):
+        return previous_sigma
+    candidate = -previous_sigma * float(
+        np.vdot(previous_update, change).real
+    ) / denominator
+    if not np.isfinite(candidate):
+        return previous_sigma
+    return clamp(candidate, minimum, maximum)
+
+
 # ============================================================================
 # Physics operations
 # ============================================================================
@@ -413,14 +426,16 @@ def run_tdgl(
     simulation,
     dt,
     tdgl_model,
+    initial_psi,
 ):
-    start = time.time()
+    start = time.perf_counter()
     tdgl_step(
         simulation,
         dt,
         tdgl_model,
+        initial_psi=initial_psi,
     )
-    end = time.time()
+    end = time.perf_counter()
     tdgl_step_time = end - start
     return tdgl_step_time
 
@@ -431,28 +446,14 @@ def run_electrical(
     electrical_voltage_right,
     electrical_tolerance,
 ):
-    start = time.time()
-    fields = simulation.fields
-
-    electrical_step(
-        fields,
-        simulation.mesh,
-        simulation.material_map,
-        simulation.contact_map,
+    start = time.perf_counter()
+    electrical_simulation_step(
+        simulation,
         voltage_left=electrical_voltage_left,
         voltage_right=electrical_voltage_right,
-        superconducting_fraction=(
-            np.abs(fields.psi) ** 2
-        ),
-        superconducting_current_x=(
-            fields.supercurrent_density_x
-        ),
-        superconducting_current_y=(
-            fields.supercurrent_density_y
-        ),
         solver_tolerance=electrical_tolerance,
     )
-    end = time.time()
+    end = time.perf_counter()
     electrical_step_time = (end - start)
     return electrical_step_time
 
@@ -461,39 +462,22 @@ def run_thermal(
     dt,
     thermal_model,
     external_heat=None,
+    initial_temperature=None,
 ):
-    start = time.time()
+    # External and dissipative sources have separate ownership in Fields.
+    start = time.perf_counter()
+    fields = simulation.fields
     if external_heat is not None:
-
-        original_heat = (
-            simulation.fields.heat_source.copy()
-        )
-
-        simulation.fields.heat_source = (
-            original_heat
-            + external_heat
-        )
-
-        thermal_step(
-            simulation,
-            dt,
-            thermal_model,
-        )
-
-        simulation.fields.heat_source = (
-            original_heat
-        )
-
-    else:
-
-        thermal_step(
-            simulation,
-            dt,
-            thermal_model,
-        )
-    end = time.time()
-    thermal_step_time = end -start
-    return thermal_step_time
+        fields.external_heat_source = np.asarray(external_heat).copy()
+        fields.heat_source = fields.external_heat_source + (
+            0 if fields.joule_heat_source is None else fields.joule_heat_source)
+    thermal_step(
+        simulation,
+        dt,
+        thermal_model,
+        initial_temperature=initial_temperature,
+    )
+    return time.perf_counter() - start
 
 
 
@@ -506,6 +490,7 @@ def execute_ordering(
     voltage_left,
     voltage_right,
     external_heat,
+    accepted_state,
 ):
     operations = ordering.split("_")
 
@@ -523,6 +508,7 @@ def execute_ordering(
                 simulation,
                 dt,
                 tdgl_model,
+                initial_psi=accepted_state.psi,
             )
 
         elif operation == "electrical":
@@ -541,6 +527,7 @@ def execute_ordering(
                 dt,
                 thermal_model,
                 external_heat=external_heat,
+                initial_temperature=accepted_state.temperature,
             )
 
         else:
@@ -761,32 +748,6 @@ def identify_problematic_components(
 # ============================================================================
 
 
-def get_nested_attribute(
-    obj,
-    path,
-    default=None,
-):
-    current = obj
-
-    for name in path.split("."):
-
-        if current is None:
-            return default
-
-        if not hasattr(
-            current,
-            name,
-        ):
-            return default
-
-        current = getattr(
-            current,
-            name,
-        )
-
-    return current
-
-
 def set_nested_attribute(
     obj,
     path,
@@ -856,15 +817,21 @@ def apply_numerical_parameters(
     )
 
 
-def build_tdgl_model(
-    parameters,
-):
+def build_tdgl_model(parameters, simulation):
+    configured = simulation.config.tdgl
     return TDGLModel(
         TDGLParameters(
+        u=configured.u,
+        gamma=configured.gamma,
+        kappa=configured.kappa,
+        normalization=configured.normalization,
+        temperature_model=configured.temperature_model,
+            include_scalar_potential=configured.include_scalar_potential,
             max_normalized_timestep=(
                 parameters
                 .tdgl_max_normalized_timestep
-            )
+            ),
+            stability_safety_factor=configured.stability_safety_factor,
         )
     )
 
@@ -885,47 +852,6 @@ def clamp(
             minimum,
         ),
         maximum,
-    )
-
-
-def adapt_parameter(
-    parameters,
-    parameter,
-    factor,
-    minimum,
-    maximum,
-):
-    old_value = getattr(
-        parameters,
-        parameter,
-    )
-
-    new_value = clamp(
-        old_value * factor,
-        minimum,
-        maximum,
-    )
-
-    changed = (
-        not math.isclose(
-            old_value,
-            new_value,
-            rel_tol=1e-14,
-            abs_tol=0.0,
-        )
-    )
-
-    if changed:
-        setattr(
-            parameters,
-            parameter,
-            new_value,
-        )
-
-    return (
-        changed,
-        old_value,
-        new_value,
     )
 
 
@@ -953,7 +879,7 @@ def choose_physical_dt_fallback(
     if new_dt >= old_dt or math.isclose(
         new_dt,
         old_dt,
-        rel_tol=1e-14,
+        rel_tol=float(_NUMERICAL_SAFEGUARDS["parameter_change_relative_tolerance"]),
         abs_tol=0.0,
     ):
         return []
@@ -1039,7 +965,7 @@ def choose_adaptation(
         if not math.isclose(
             old_value,
             new_value,
-            rel_tol=1e-14,
+            rel_tol=float(_NUMERICAL_SAFEGUARDS["parameter_change_relative_tolerance"]),
             abs_tol=0.0,
         ):
             actions.append(
@@ -1059,8 +985,8 @@ def choose_adaptation(
 def adaptation_was_effective(
     previous_result,
     current_result,
-    minimum_residual_improvement=0.10,
-    minimum_iteration_improvement=0.10,
+    minimum_residual_improvement=None,
+    minimum_iteration_improvement=None,
 ):
     """
     Decide whether an adaptation produced a meaningful improvement.
@@ -1070,6 +996,15 @@ def adaptation_was_effective(
     threshold. This deliberately uses the previous and current failed
     attempts rather than merely checking whether a parameter changed.
     """
+    if minimum_residual_improvement is None:
+        minimum_residual_improvement = float(
+            _ADAPTATION_EFFECTIVENESS["minimum_residual_improvement"]
+        )
+    if minimum_iteration_improvement is None:
+        minimum_iteration_improvement = float(
+            _ADAPTATION_EFFECTIVENESS["minimum_iteration_improvement"]
+        )
+
     if previous_result is None:
         return True
 
@@ -1122,7 +1057,9 @@ def solve_coupled_attempt(
     prediction_window,
     reasonable_iterations,
     adaptive_relaxation,
+    relaxation_method,
     minimum_sigma,
+    maximum_sigma,
     reduction_factor,
     required_reversals,
     adaptive_controller_config,
@@ -1159,18 +1096,17 @@ def solve_coupled_attempt(
     sigma = parameters.sigma
 
     previous_delta = None
+    previous_scaled_update = None
     consecutive_reversals = 0
 
-    timing_totals = {
-        "tdgl":0.0,
-        "electrical": 0.0,
-        "thermal": 0.0
-    }
     timing_history = {
         "tdgl": [],
         "electrical": [],
         "thermal": []
     }
+    electrical_iteration_history = []
+    tdgl_substep_history = []
+    thermal_substep_history = []
 
     controller = build_controller(
         tolerance=tolerance,
@@ -1192,48 +1128,19 @@ def solve_coupled_attempt(
 
     converged = False
 
+    apply_numerical_parameters(simulation, parameters)
+    thermal_model.max_substep = parameters.thermal_max_substep
+    tdgl_model = build_tdgl_model(parameters, simulation)
+
     for iteration in range(
         1,
         max_iterations + 1,
     ):
 
-        apply_trial_state(
-            simulation,
-            accepted_state,
-        )
-
-        simulation.fields.temperature = (
-            trial_state.temperature.copy()
-        )
-
-        simulation.fields.voltage = (
-            trial_state.voltage.copy()
-        )
-
-        simulation.fields.vector_potential_x = (
-            trial_state.vector_potential_x.copy()
-        )
-
-        simulation.fields.vector_potential_y = (
-            trial_state.vector_potential_y.copy()
-        )
-
-        simulation.fields.psi = (
-            accepted_state.psi.copy()
-        )
-
-        apply_numerical_parameters(
-            simulation,
-            parameters,
-        )
-
-        thermal_model.max_substep = (
-            parameters.thermal_max_substep
-        )
-
-        tdgl_model = build_tdgl_model(
-            parameters
-        )
+        # Install the current endpoint guess, including exchanged derived
+        # sources. Differential solvers receive their accepted time-level
+        # initial conditions explicitly through execute_ordering().
+        apply_trial_state(simulation, trial_state)
 
         iteration_timings = execute_ordering(
             simulation=simulation,
@@ -1244,10 +1151,20 @@ def solve_coupled_attempt(
             voltage_left=voltage_left,
             voltage_right=voltage_right,
             external_heat=external_heat,
+            accepted_state=accepted_state,
         )
 
         for component, elapsed in iteration_timings.items():
             timing_history[component].append(elapsed)
+        electrical_iteration_history.append(
+            int(getattr(simulation.fields, "electrical_solver_iterations", 0))
+        )
+        tdgl_substep_history.append(
+            int(getattr(simulation.fields, "tdgl_solver_substeps", 0))
+        )
+        thermal_substep_history.append(
+            int(getattr(simulation.fields, "thermal_solver_substeps", 0))
+        )
 
         calculated = copy_trial_state(
             simulation
@@ -1256,6 +1173,7 @@ def solve_coupled_attempt(
         residuals = calculate_residuals(
             trial_state,
             calculated,
+            simulation.config.coupling.field_scales,
         )
 
         residual = residuals["total"]
@@ -1349,6 +1267,10 @@ def solve_coupled_attempt(
                 calculated,
             )
         )
+        current_scaled_update = scaled_update_vector(
+            current_delta,
+            simulation.config.coupling.field_scales,
+        )
 
         oscillating = False
 
@@ -1389,8 +1311,33 @@ def solve_coupled_attempt(
         adaptation_triggered = False
 
         if (
+            adaptive_relaxation
+            and relaxation_method == "aitken"
+            and previous_scaled_update is not None
+        ):
+            new_sigma = aitken_relaxation(
+                previous_scaled_update,
+                current_scaled_update,
+                sigma,
+                minimum_sigma,
+                maximum_sigma,
+            )
+            adaptation_triggered = not math.isclose(
+                new_sigma,
+                sigma,
+                rel_tol=float(
+                    _NUMERICAL_SAFEGUARDS[
+                        "parameter_change_relative_tolerance"
+                    ]
+                ),
+            )
+            sigma = new_sigma
+            parameters.sigma = sigma
+
+        if (
             oscillating
             and adaptive_relaxation
+            and relaxation_method == "reduction"
             and adaptive_controller_config[
                 "behavior"
             ][
@@ -1477,6 +1424,7 @@ def solve_coupled_attempt(
         )
 
         previous_delta = current_delta
+        previous_scaled_update = current_scaled_update
 
 
 
@@ -1557,6 +1505,9 @@ def solve_coupled_attempt(
             problematic_components_history
         ),
         timing_history=(timing_history),
+        electrical_iteration_history=electrical_iteration_history,
+        tdgl_substep_history=tdgl_substep_history,
+        thermal_substep_history=thermal_substep_history,
 
     )
 
@@ -1568,37 +1519,18 @@ def solve_coupled_attempt(
 def make_gaussian_heat_source(
     simulation,
     amplitude,
-    radius_cells,
+    radius_meters,
 ):
     mesh = simulation.mesh
-
-    y, x = np.indices(
-        (
-            mesh.ny,
-            mesh.nx,
-        )
-    )
-
-    cx = (
-        mesh.nx - radius_cells
-    ) / 2.0
-
-    cy = (
-        mesh.ny - radius_cells
-    ) / 2.0
-
-    r2 = (
-        (x - cx) ** 2
-        + (y - cy) ** 2
-    )
-
-    return amplitude * np.exp(
-        -r2
-        / (
-            2.0
-            * radius_cells ** 2
-        )
-    )
+    if not np.isfinite(amplitude):
+        raise ValueError("External heat amplitude must be finite.")
+    if not np.isfinite(radius_meters) or radius_meters <= 0:
+        raise ValueError("External heat radius must be positive finite meters.")
+    x, y = np.meshgrid(mesh.x, mesh.y)
+    center_x = 0.5 * (mesh.x[0] + mesh.x[-1])
+    center_y = 0.5 * (mesh.y[0] + mesh.y[-1])
+    radius_squared = (x - center_x) ** 2 + (y - center_y) ** 2
+    return amplitude * np.exp(-radius_squared / (2.0 * radius_meters**2))
 
 
 # ============================================================================
@@ -1817,6 +1749,10 @@ def run_single(
     thermal_model = ThermalModel(
         bath_temperature=config["thermal"]["bath_temperature"],
         thermal_relaxation_rate=config["thermal"]["thermal_relaxation_rate"],
+        max_substep=simulation.config.thermal.max_substep,
+        stability_safety_factor=(
+            simulation.config.thermal.stability_safety_factor
+        ),
     )
 
     voltage_left = config["electrical"]["voltage_left"]
@@ -1827,7 +1763,7 @@ def run_single(
         external_heat = make_gaussian_heat_source(
             simulation,
             amplitude=config["external_heat"]["amplitude"],
-            radius_cells=config["external_heat"]["radius_cells"],
+            radius_meters=config["external_heat"]["radius_meters"],
         )
 
     physical_steps = int(config["physical_steps"])
@@ -1840,23 +1776,44 @@ def run_single(
 
     relaxation_config = config["adaptive_relaxation"]
     adaptive_relaxation = bool(relaxation_config["enabled"])
+    relaxation_method = relaxation_config["method"]
     minimum_sigma = float(relaxation_config["minimum_sigma"])
+    maximum_sigma = float(relaxation_config["maximum_sigma"])
     reduction_factor = float(relaxation_config["reduction_factor"])
     required_reversals = int(relaxation_config["required_reversals"])
+    if relaxation_method not in {"aitken", "reduction"}:
+        raise ValueError("adaptive_relaxation.method must be 'aitken' or 'reduction'.")
+    if not 0 < minimum_sigma <= maximum_sigma <= 1:
+        raise ValueError("Adaptive relaxation bounds must satisfy 0 < min <= max <= 1.")
 
     controller_config = config["adaptive_controller"]
     bounds = controller_config["bounds"]
+    safeguards = config["numerical_safeguards"]
+    time_absolute_floor = float(safeguards["time_absolute_floor"])
+    time_relative_floor = float(safeguards["time_relative_floor"])
 
-    simulation_thermal_max_substep = get_nested_attribute(
-        simulation,
-        "config.thermal.max_substep",
-        1e-13,
-    )
-    simulation_electrical_tolerance = get_nested_attribute(
-        simulation,
-        "config.electrical.solver.tolerance",
-        1e-10,
-    )
+    simulation_thermal_max_substep = simulation.config.thermal.max_substep
+    electrical_policy = config["electrical"]["inner_tolerance_policy"]
+    if electrical_policy == "simulation":
+        simulation_electrical_tolerance = simulation.config.electrical.solver.tolerance
+    elif electrical_policy == "coupling_scaled":
+        voltage_scale = max(
+            simulation.config.coupling.field_scales["voltage"],
+            abs(voltage_left),
+            abs(voltage_right),
+        )
+        simulation_electrical_tolerance = clamp(
+            float(config["electrical"]["inner_tolerance_factor"])
+            * tolerance
+            * voltage_scale,
+            float(bounds["electrical_tolerance_min"]),
+            float(bounds["electrical_tolerance_max"]),
+        )
+    else:
+        raise ValueError(
+            "electrical.inner_tolerance_policy must be 'simulation' or "
+            "'coupling_scaled'."
+        )
     tdgl_max_normalized_timestep = config["initial_conditions"]["initial_tdgl_max_normalized_timestep"]
     print(tdgl_max_normalized_timestep)
 
@@ -1879,7 +1836,6 @@ def run_single(
     adaptation_recommendation_count = 0
     oscillation_count = 0
     oscillation_restart_count = 0
-    successful_adaptations = 0
     prediction_errors = []
     final_result = None
     physical_step_summaries = []
@@ -1891,7 +1847,6 @@ def run_single(
     mesh = simulation.mesh
     center_y = mesh.ny // 2
 
-    tracker = 0
     if hasattr(mesh, "dx"):
         kymograph_x = (
             np.arange(mesh.nx, dtype=float)
@@ -1910,22 +1865,14 @@ def run_single(
     # escalation is a reduction of the coupled physical timestep.
     previous_failed_result = None
     previous_adaptation_parameters = []
+    pending_adaptation_events = []
 
-    adaptation_effectiveness_config = controller_config.get(
-        "adaptation_effectiveness",
-        {},
-    )
+    adaptation_effectiveness_config = controller_config["adaptation_effectiveness"]
     minimum_residual_improvement = float(
-        adaptation_effectiveness_config.get(
-            "minimum_residual_improvement",
-            0.10,
-        )
+        adaptation_effectiveness_config["minimum_residual_improvement"]
     )
     minimum_iteration_improvement = float(
-        adaptation_effectiveness_config.get(
-            "minimum_iteration_improvement",
-            0.10,
-        )
+        adaptation_effectiveness_config["minimum_iteration_improvement"]
     )
 
     timing_history = {
@@ -1933,6 +1880,9 @@ def run_single(
         "electrical": [],
         "thermal": []
         }
+    electrical_solver_iterations = 0
+    tdgl_solver_substeps = 0
+    thermal_solver_substeps = 0
 
     # Each outer physical step represents one requested interval of the
     # original dt. If convergence forces dt downward, that interval is
@@ -1940,17 +1890,13 @@ def run_single(
     # not silently shorten the requested physical simulation time.
     target_step_duration = float(dt)
 
-    interval = max(1, physical_steps // 100)
+    interval = max(1, physical_steps // int(config["output"]["progress_updates"]))
 
     for physical_step in range(physical_steps):
-        time_start = time.time()
+        time_start = time.perf_counter()
 
 
-        accepted_state = copy.deepcopy(
-            copy_trial_state(simulation)
-        )
-        outer_step_start_events = len(adaptation_events)
-
+        accepted_state = copy_trial_state(simulation)
         remaining_step_time = target_step_duration
         timestep_attempt = 0
         timestep_converged = False
@@ -1959,8 +1905,8 @@ def run_single(
 
 
         while remaining_step_time > max(
-            1e-30,
-            target_step_duration * 1e-15,
+            time_absolute_floor,
+            target_step_duration * time_relative_floor,
         ):
             # The current adaptive dt may not overshoot the requested outer
             # physical-step endpoint.
@@ -1992,7 +1938,6 @@ def run_single(
                 accepted_state,
             )
 
-            attempt_start_events = len(adaptation_events)
             result = solve_coupled_attempt(
                 simulation=simulation,
                 accepted_state=accepted_state,
@@ -2008,12 +1953,28 @@ def run_single(
                 prediction_window=prediction_window,
                 reasonable_iterations=reasonable_iterations,
                 adaptive_relaxation=adaptive_relaxation,
+                relaxation_method=relaxation_method,
                 minimum_sigma=minimum_sigma,
+                maximum_sigma=maximum_sigma,
                 reduction_factor=reduction_factor,
                 required_reversals=required_reversals,
                 adaptive_controller_config=controller_config,
             )
             final_result = result
+
+            previous_adaptation_effective = None
+            if previous_failed_result is not None and pending_adaptation_events:
+                previous_adaptation_effective = adaptation_was_effective(
+                    previous_failed_result,
+                    result,
+                    minimum_residual_improvement=minimum_residual_improvement,
+                    minimum_iteration_improvement=minimum_iteration_improvement,
+                )
+                for event_index in pending_adaptation_events:
+                    adaptation_events[event_index].successful_after_restart = (
+                        previous_adaptation_effective
+                    )
+                pending_adaptation_events = []
             total_iterations += result.iterations
             checkpoint_count += sum(result.checkpoint_history)
             adaptation_recommendation_count += sum(result.adaptation_history)
@@ -2021,6 +1982,9 @@ def run_single(
             prediction_errors.extend(result.prediction_errors)
             for component, elapsed in result.timing_history.items():
                 timing_history[component].extend(elapsed)
+            electrical_solver_iterations += sum(result.electrical_iteration_history)
+            tdgl_solver_substeps += sum(result.tdgl_substep_history)
+            thermal_solver_substeps += sum(result.thermal_substep_history)
             
             if result.converged:
                 attempt_history = build_attempt_history(
@@ -2042,9 +2006,7 @@ def run_single(
                 all_history.extend(attempt_history)
 
                 timestep_converged = True
-                accepted_state = copy.deepcopy(
-                    copy_trial_state(simulation)
-                )
+                accepted_state = copy_trial_state(simulation)
 
                 # Only an accepted physical state advances physical time and
                 # enters the kymographs.
@@ -2073,8 +2035,8 @@ def run_single(
                 previous_adaptation_parameters = []
 
                 if remaining_step_time <= max(
-                    1e-30,
-                    target_step_duration * 1e-15,
+                    time_absolute_floor,
+                    target_step_duration * time_relative_floor,
                 ):
                     physical_step_summaries.append({
                         "physical_step": physical_step + 1,
@@ -2088,14 +2050,10 @@ def run_single(
                         "step_duration": physical_time - substep_start_time,
                     })
 
-                    for event in adaptation_events[outer_step_start_events:]:
-                        if event.successful_after_restart is None:
-                            event.successful_after_restart = True
-                            successful_adaptations += 1
-                    if physical_step % interval == 0:
-                        percentage = (physical_step / physical_steps)*100
+                    if (physical_step + 1) % interval == 0:
+                        percentage = ((physical_step + 1) / physical_steps) * 100
                         print("Completion percentage:", percentage, "%")
-                        time_end =time.time()
+                        time_end = time.perf_counter()
                         time_per_percent = round(time_end-time_start, 3)
                         print(time_per_percent, "seconds")
         
@@ -2154,12 +2112,7 @@ def run_single(
                 previous_failed_result is not None
                 and previous_adaptation_parameters
             ):
-                adaptation_was_ineffective = not adaptation_was_effective(
-                    previous_failed_result,
-                    result,
-                    minimum_residual_improvement=minimum_residual_improvement,
-                    minimum_iteration_improvement=minimum_iteration_improvement,
-                )
+                adaptation_was_ineffective = not previous_adaptation_effective
 
             if adaptation_was_ineffective:
                 actions = choose_physical_dt_fallback(
@@ -2327,6 +2280,7 @@ def run_single(
                     ),
                 )
                 adaptation_events.append(event)
+                pending_adaptation_events.append(len(adaptation_events) - 1)
 
             total_restarts += 1
             print(total_restarts)
@@ -2360,13 +2314,17 @@ def run_single(
 
         # Stop processing later outer steps after an unrecoverable failure.
         if not timestep_converged and remaining_step_time > max(
-            1e-30,
-            target_step_duration * 1e-15,
+            time_absolute_floor,
+            target_step_duration * time_relative_floor,
         ):
-            continue
+            # No failed or partially relaxed endpoint may escape into later
+            # physical steps. An unrecoverable time window terminates the run.
+            apply_trial_state(simulation, accepted_state)
+            break
 
     runtime = time.perf_counter() - start_time
     fields = simulation.fields
+    physics_diagnostics = evaluate_physics_diagnostics(simulation).to_dict()
 
     valid_prediction_errors = [
         value
@@ -2390,6 +2348,11 @@ def run_single(
             adaptation_parameter_counts.get(event.parameter, 0) + 1
         )
 
+    successful_adaptations = sum(
+        1
+        for event in adaptation_events
+        if event.successful_after_restart is True
+    )
     unsuccessful_adaptations = sum(
         1
         for event in adaptation_events
@@ -2425,14 +2388,25 @@ def run_single(
         "physical_steps": physical_steps,
         "failed_steps": failed_steps,
         "total_iterations": total_iterations,
-        "average_iterations": total_iterations / physical_steps,
+        "average_iterations": (
+            total_iterations / len(physical_step_summaries)
+            if physical_step_summaries
+            else 0.0
+        ),
         "final_residual": (
             final_result.final_residual
             if final_result is not None
             else float("inf")
         ),
         "runtime_seconds": runtime,
-        "runtime_per_physical_step": runtime / physical_steps,
+        "electrical_solver_iterations": electrical_solver_iterations,
+        "tdgl_solver_substeps": tdgl_solver_substeps,
+        "thermal_solver_substeps": thermal_solver_substeps,
+        "runtime_per_physical_step": (
+            runtime / len(physical_step_summaries)
+            if physical_step_summaries
+            else 0.0
+        ),
         "final_physical_time": physical_time,
         "final_temperature_mean": float(np.mean(fields.temperature)),
         "final_temperature_max": float(np.max(fields.temperature)),
@@ -2443,6 +2417,7 @@ def run_single(
             + fields.current_density_y ** 2
         ))),
         "final_heat_mean": float(np.mean(fields.heat_source)),
+        "physics_diagnostics": physics_diagnostics,
         "checkpoint_count": checkpoint_count,
         "adaptation_recommendation_count": adaptation_recommendation_count,
         "adaptation_event_count": len(adaptation_events),
@@ -2624,7 +2599,7 @@ def plot_attempt_residual(
 
     plt.savefig(
         output_path,
-        dpi=150,
+        dpi=_PLOT_DPI,
     )
 
     plt.close()
@@ -2693,7 +2668,7 @@ def plot_field_residuals(
 
     plt.savefig(
         output_path,
-        dpi=150,
+        dpi=_PLOT_DPI,
     )
 
     plt.close()
@@ -2743,7 +2718,7 @@ def plot_sigma_history(
 
     plt.savefig(
         output_path,
-        dpi=150,
+        dpi=_PLOT_DPI,
     )
 
     plt.close()
@@ -2826,7 +2801,7 @@ def plot_convergence_prediction(
 
     plt.savefig(
         output_path,
-        dpi=150,
+        dpi=_PLOT_DPI,
     )
 
     plt.close()
@@ -2883,7 +2858,7 @@ def plot_prediction_confidence(
 
     plt.savefig(
         output_path,
-        dpi=150,
+        dpi=_PLOT_DPI,
     )
 
     plt.close()
@@ -2929,7 +2904,7 @@ def plot_kymograph(
     plt.title(title)
     plt.colorbar(mesh, label=colorbar_label)
     plt.tight_layout()
-    plt.savefig(output_path, dpi=150)
+    plt.savefig(output_path, dpi=_PLOT_DPI)
     plt.close()
 
 
@@ -2994,8 +2969,8 @@ def plot_coupling_timings(timing_history, output_path):
     plt.grid(True)
 
     plt.tight_layout()
-    plt.savefig(output_path, dpi=150)
-    plt.close
+    plt.savefig(output_path, dpi=_PLOT_DPI)
+    plt.close()
 # ============================================================================
 # Configuration / output
 # ============================================================================
@@ -3279,7 +3254,10 @@ def save_results(
                 ),
                 colorbar_label="|ψ|",
             )
-            plot_coupling_timings(result['timing_history'], output_directory / "coupling_timing.png")
+            plot_coupling_timings(
+                result["timing_history"],
+                output_directory / f"{prefix}_coupling_timing.png",
+            )
 
 
 # ============================================================================
@@ -3288,6 +3266,7 @@ def save_results(
 
 
 def main():
+    global _ADAPTATION_EFFECTIVENESS, _NUMERICAL_SAFEGUARDS, _PLOT_DPI
     parser = argparse.ArgumentParser(
         description=(
             "SHS adaptive coupled convergence benchmark"
@@ -3346,6 +3325,11 @@ def main():
     config = load_config(
         args.config
     )
+    _NUMERICAL_SAFEGUARDS = config["numerical_safeguards"]
+    _PLOT_DPI = int(config["output"]["plot_dpi"])
+    _ADAPTATION_EFFECTIVENESS = config[
+        "adaptive_controller"
+    ]["adaptation_effectiveness"]
 
     if args.iterations is not None:
         config[
@@ -3553,11 +3537,7 @@ def main():
             "directory"
         ]
     )
-    output_directory = base_directory
-    counter = 1
-    while output_directory.exists():
-        output_directory = base_directory.parent / f"{base_directory.name}_{counter}"
-        counter+=1
+    output_directory = reserve_output_directory(base_directory)
 
 
     save_results(

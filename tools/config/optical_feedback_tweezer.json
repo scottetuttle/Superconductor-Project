@@ -1,0 +1,49 @@
+{
+  "_documentation": {
+    "purpose": "Test whether a laser kept 17.5 nm ahead of a tracked vortex transports it farther than a stationary laser, with dark and thermal-cutoff controls.",
+    "relies_on": "Builds configs/simulations/nbn_optical_vortex_unpinned.json for the 100 nm film, NbN material, two-temperature heat dynamics, and Heun TDGL. The 17.5 nm, 500 nW, 10 nm spot settings follow the optical-gradient sweep; that sweep crossed Tc near 5.1 ps, so this run has a subcritical thermal cutoff.",
+    "run_command": "python tools/optical_feedback_tweezer.py --config tools/config/optical_feedback_tweezer.json",
+    "authority": "This file sets the feedback experiment. The referenced simulation supplies the material, mesh, timestep, and solver controls; this runner sets the field, seed, laser, and zero applied current.",
+    "fields": {
+      "simulation_config": "Simulation JSON providing geometry, material and physics solver settings.",
+      "applied_field_T": "Uniform perpendicular applied magnetic field in tesla.",
+      "initial_vortex.x_fraction": "Initial vortex x divided by film width; off-node seed improves winding detection.",
+      "initial_vortex.y_fraction": "Initial vortex y divided by film height.",
+      "initial_vortex.charge": "Topological winding sign of the initial vortex.",
+      "initial_vortex.core_radius_cells": "Initial core radius measured in grid cells.",
+      "seed_position_m": "Physical seed location in metres, used to find the prepared vortex.",
+      "absorbed_power_W": "Film-absorbed laser power in watts. The default 500 nW is exploratory and may reach Tc on longer runs.",
+      "spot_sigma_m": "Gaussian spot standard deviation in metres.",
+      "maximum_electron_temperature_K": "Stop an illuminated branch at this peak electron temperature, below material Tc, to avoid claiming motion through a normal spot.",
+      "controller.offset_m": "Desired vector from tracked vortex core to laser center, in metres. Here the beam stays ahead in +y.",
+      "controller.max_speed_m_s": "Maximum beam-center speed, in metres per second; prevents the feedback beam from jumping to a newly measured position.",
+      "controller.update_every_steps": "Number of accepted physical steps between laser-command updates.",
+      "controller.measurement_delay_updates": "Additional accepted vortex measurements of latency before feedback uses a center position; zero uses the most recent accepted state.",
+      "timing.dark_steps": "Laser-off preparation steps before cloning the same state into dynamic, stationary, and dark branches.",
+      "timing.exposure_steps": "Maximum physical steps per branch; branches may stop earlier at the thermal cutoff.",
+      "timing.sample_every": "Steps between saved scalar/vortex/gradient diagnostics.",
+      "output.frame_every": "Steps between saved film frames used for snapshots and the GIF.",
+      "output.zoom_radius_cells": "Half-width of the cropped core/beam view in mesh cells.",
+      "output.gif_enabled": "Whether to render a time-resolved film GIF for the dynamic branch.",
+      "output.gif_fps": "Playback frames per second; does not change simulated time.",
+      "output.dpi": "Image resolution for figures and GIF frames.",
+      "output_directory": "Base result directory; a numbered sibling is reserved for each run."
+    }
+  },
+  "simulation_config": "configs/simulations/nbn_optical_vortex_unpinned.json",
+  "applied_field_T": 0.2,
+  "initial_vortex": {"x_fraction": 0.505, "y_fraction": 0.505, "charge": 1, "core_radius_cells": 2.0},
+  "seed_position_m": [5.05e-8, 5.05e-8],
+  "absorbed_power_W": 5e-7,
+  "spot_sigma_m": 1e-8,
+  "maximum_electron_temperature_K": 15.45,
+  "controller": {
+    "offset_m": [0.0, 1.75e-8],
+    "max_speed_m_s": 1000.0,
+    "update_every_steps": 1,
+    "measurement_delay_updates": 0
+  },
+  "timing": {"dark_steps": 100, "exposure_steps": 1000, "sample_every": 5},
+  "output": {"frame_every": 10, "zoom_radius_cells": 24, "gif_enabled": true, "gif_fps": 8, "dpi": 110},
+  "output_directory": "benchmark_results/optical_feedback_tweezer"
+}

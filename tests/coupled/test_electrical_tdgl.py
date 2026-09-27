@@ -31,6 +31,7 @@ def test_superconducting_state_has_no_normal_current():
         electric_field_y,
         resistivity,
         superconducting_fraction,
+        model="condensate_depletion",
     )
 
     assert np.allclose(
@@ -62,6 +63,7 @@ def test_normal_state_has_normal_current():
         electric_field_y,
         resistivity,
         superconducting_fraction,
+        model="condensate_depletion",
     )
 
     assert np.allclose(
@@ -94,6 +96,7 @@ def test_partial_superconducting_suppression():
         electric_field_y,
         resistivity,
         superconducting_fraction,
+        model="condensate_depletion",
     )
 
     assert np.allclose(
@@ -199,6 +202,10 @@ def test_electrical_tdgl_produces_total_current():
         "configs/simulations/nbn_hotspot_test.json"
     )
 
+    # This is a finite-output sanity check under a very large 1 V drive,
+    # so it does not require the production benchmark's tighter tolerance.
+    simulation.config.electrical.solver.tolerance = 1e-6
+
     simulation.fields.psi[:] = (
         0.5 + 0.0j
     )
@@ -208,6 +215,8 @@ def test_electrical_tdgl_produces_total_current():
     )
 
     electrical_model = ElectricalModel()
+
+    simulation.config.electrical.solver.max_iterations = 20000
 
     electrical_tdgl_step(
         simulation,
@@ -250,6 +259,9 @@ def test_supercurrent_contributes_to_total_current():
         "configs/simulations/nbn_hotspot_test.json"
     )
 
+    # This test checks current decomposition rather than potential accuracy.
+    simulation.config.electrical.solver.tolerance = 1e-9
+
     simulation.fields.psi[:] = (
         1.0 + 0.0j
     )
@@ -259,6 +271,8 @@ def test_supercurrent_contributes_to_total_current():
     )
 
     electrical_model = ElectricalModel()
+
+    simulation.config.electrical.solver.max_iterations = 20000
 
     electrical_tdgl_step(
         simulation,
@@ -308,3 +322,12 @@ def test_supercurrent_contributes_to_total_current():
             normal_current_y
         ),
     )
+def test_standard_tdgl_normal_conductivity_is_not_depleted_by_condensate():
+    model = ElectricalModel()
+    fraction = np.full((3, 4), 0.9)
+
+    conductivity = model.normal_conductivity(
+        np.full((3, 4), 2.0), fraction, model="constant"
+    )
+
+    assert np.allclose(conductivity, 0.5)

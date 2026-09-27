@@ -1,0 +1,103 @@
+{
+  "_documentation": {
+    "purpose": "Fast-follow control experiment: repeat the demonstrated 10 nm optical transport while allowing the beam to keep its 15 nm lead as vortex velocity approaches 1.2 km/s.",
+    "relies_on": "Uses the existing uniform solver through configs/simulations/nbn_optical_vortex_large_unpinned.json. It is deliberately separate from the experimental nested-mesh representation until two-level evolution is validated.",
+    "run_command": "python tools/optical_transport_overnight.py --config tools/config/optical_transport_fast_follow.json",
+    "resume_command": "python tools/optical_transport_overnight.py --config tools/config/optical_transport_fast_follow.json --resume <printed-result-directory>",
+    "visualize_command": "python tools/visualize_optical_transport.py <printed-result-directory>",
+    "quick_command": "python tools/optical_transport_overnight.py --config tools/config/optical_transport_fast_follow.json --dark-steps 2 --max-steps 5",
+    "interpretation": "Changes only beam-following bandwidth relative to the successful detailed run: power, spot, thermal thresholds and target remain controls. This isolates whether collapse of beam-vortex separation limited late velocity.",
+    "fields": {
+      "simulation_config": "Enlarged 150 nm uniform-grid reference with consistent 13 K bath and contacts.",
+      "applied_field_T": "Uniform perpendicular field used to retain one +1 vortex.",
+      "initial_vortex": "Centered seeded vortex specification.",
+      "seed_position_m": "Physical seed used to find the vortex after dark preparation.",
+      "target.displacement_m": "Requested displacement from the prepared center; [0,5e-9] requests 5 nm in +y.",
+      "target.tolerance_nm": "Euclidean target radius that counts as successful arrival.",
+      "laser.absorbed_power_W": "Absorbed power while the laser is on. The surrounding hotspot may exceed Tc in this experiment.",
+      "laser.spot_sigma_m": "Gaussian heating standard deviation.",
+      "laser.offset_m": "Beam position relative to the tracked vortex; positive y produces the intended forward gradient.",
+      "laser.max_speed_m_s": "Maximum feedback-beam speed.",
+      "laser.update_every_steps": "Accepted steps between beam-target updates.",
+      "pinning.enabled": "Optional Gaussian pinning landscape; false isolates optical and boundary behavior.",
+      "thermal_control.sensor": "vortex makes hysteresis respond to interpolated electron temperature at the tracked core rather than the global maximum.",
+      "thermal_control.switch_off_K": "Turn the laser off as the local vortex temperature approaches material Tc=15.5 K.",
+      "thermal_control.restart_below_K": "Restart after the vortex has cooled below this lower threshold.",
+      "thermal_control.hard_stop_K": "Null permits remote parts of the hotspot to exceed Tc; topology loss and solver failure remain stop conditions.",
+      "thermal_control.minimum_dwell_steps": "Minimum time between switching decisions to prevent chatter.",
+      "timing.dark_steps": "Laser-off vortex preparation steps.",
+      "timing.max_steps": "Maximum accepted transport steps.",
+      "timing.sample_every": "Steps between flushed scalar and force-proxy diagnostics.",
+      "timing.checkpoint_every": "Steps between restart checkpoints.",
+      "timing.stall_window_steps": "Progress window used to detect an unproductive control loop.",
+      "timing.stall_consecutive_windows": "Consecutive inadequate windows before termination.",
+      "timing.minimum_progress_per_window_nm": "Minimum net targetward progress per window.",
+      "timing.max_wall_hours": "Wall-clock limit for one invocation; resume can continue.",
+      "output.field_snapshot_every": "Steps between atomic compressed temperature, phonon, psi, vortex and beam frames used for a field GIF.",
+      "output_directory": "Unique result-directory base."
+    }
+  },
+  "simulation_config": "configs/simulations/nbn_optical_vortex_large_unpinned.json",
+  "applied_field_T": 0.2,
+  "initial_vortex": {
+    "x_fraction": 0.5033333333333333,
+    "y_fraction": 0.5033333333333333,
+    "charge": 1,
+    "core_radius_cells": 2.0
+  },
+  "seed_position_m": [
+    7.55e-08,
+    7.55e-08
+  ],
+  "target": {
+    "displacement_m": [
+      0.0,
+      1e-08
+    ],
+    "tolerance_nm": 0.25
+  },
+  "laser": {
+    "absorbed_power_W": 5e-07,
+    "spot_sigma_m": 1e-08,
+    "offset_m": [
+      0.0,
+      1.5e-08
+    ],
+    "max_speed_m_s": 2000.0,
+    "update_every_steps": 1
+  },
+  "pinning": {
+    "enabled": false,
+    "sites": [
+      {
+        "position_m": [
+          7.55e-08,
+          7.55e-08
+        ],
+        "sigma_m": 2.5e-09,
+        "strength": 0.025
+      }
+    ]
+  },
+  "thermal_control": {
+    "sensor": "vortex",
+    "switch_off_K": 15.15,
+    "restart_below_K": 14.4,
+    "hard_stop_K": null,
+    "minimum_dwell_steps": 50
+  },
+  "timing": {
+    "dark_steps": 100,
+    "max_steps": 10000,
+    "sample_every": 10,
+    "checkpoint_every": 200,
+    "stall_window_steps": 1000,
+    "stall_consecutive_windows": 3,
+    "minimum_progress_per_window_nm": 0.05,
+    "max_wall_hours": 10
+  },
+  "output": {
+    "field_snapshot_every": 50
+  },
+  "output_directory": "benchmark_results/optical_transport_fast_follow"
+}

@@ -1,0 +1,59 @@
+{
+  "_documentation": {
+    "purpose": "Sweep stationary optical-hotspot offset, absorbed power, and optional beam width while comparing opposed +offset/-offset controls from one shared dark-prepared vortex state.",
+    "relies_on": "Builds configs/simulations/nbn_optical_vortex_unpinned.json for geometry, material, timestep, TDGL, and thermal coefficients.",
+    "run_command": "python tools/optical_gradient_probe_sweep.py --config tools/config/optical_gradient_probe_sweep_example.json",
+    "authority": "This file sets sweep axes, field, seed, and time budget; the referenced simulation supplies material and numerical settings. The sweep runner overrides laser settings and zeroes applied current.",
+    "sweep_metric": "mean_motion_toward_beam_nm is the average dark-subtracted vortex displacement projected toward the +offset and -offset beam positions. Positive means attraction toward the hotspot.",
+    "sweeps.beam_offsets_m": "List of [dx_m, dy_m] vectors. Each vector is one beam-vortex separation and is tested in both + and - directions.",
+    "sweeps.absorbed_powers_W": "List of absorbed powers. Each becomes a separate line in the distance-versus-offset plot for a fixed spot width.",
+    "sweeps.spot_sigmas_m": "List of Gaussian sigma values. One distance-versus-offset plot is saved per sigma, plus width-comparison plots when multiple sigmas are supplied.",
+    "fields": {
+      "simulation_config": "Base simulation JSON providing the material, film, thermal dynamics, and solver settings.",
+      "applied_field_T": "Uniform perpendicular applied magnetic field in tesla.",
+      "initial_vortex.x_fraction": "Initial vortex x location divided by film width.",
+      "initial_vortex.y_fraction": "Initial vortex y location divided by film height.",
+      "initial_vortex.charge": "Topological sign of seeded vortex.",
+      "initial_vortex.core_radius_cells": "Initial vortex-core radius in mesh cells.",
+      "seed_position_m": "Seeded vortex physical coordinates in metres used to position the beams.",
+      "sweeps.beam_offsets_m": "Offset vectors in metres; each is tested with both signs.",
+      "sweeps.absorbed_powers_W": "Absorbed film powers in watts, independent of incident optical power.",
+      "sweeps.spot_sigmas_m": "Gaussian standard deviations of the optical spot in metres.",
+      "minimum_directional_response_nm": "Minimum dark-subtracted motion toward both mirrored beams required to flag a response, in nanometres.",
+      "timing.dark_steps": "No-laser equilibration steps shared by every case.",
+      "timing.exposure_steps": "Time steps for each illuminated and dark control branch.",
+      "timing.sample_every": "Steps between saved gradient and vortex-position diagnostics.",
+      "output.dpi": "Raster resolution for generated plots.",
+      "output_directory": "Base result directory; a numbered sibling is reserved for each new run."
+    }
+  },
+  "simulation_config": "configs/simulations/nbn_optical_vortex_unpinned.json",
+  "applied_field_T": 0.2,
+  "initial_vortex": {
+    "x_fraction": 0.505,
+    "y_fraction": 0.505,
+    "charge": 1,
+    "core_radius_cells": 2.0
+  },
+  "seed_position_m": [5.05e-8, 5.05e-8],
+  "sweeps": {
+    "beam_offsets_m": [
+      [0.0, 1.75e-8],
+      [0.0, 1.8e-8],
+      [0.0, 1.85e-8],
+      [0.0, 1.9e-8]
+    ],
+    "absorbed_powers_W": [5e-7],
+    "spot_sigmas_m": [1e-8]
+  },
+  "minimum_directional_response_nm": 0.1,
+  "timing": {
+    "dark_steps": 100,
+    "exposure_steps": 100,
+    "sample_every": 5
+  },
+  "output": {
+    "dpi": 150
+  },
+  "output_directory": "benchmark_results/optical_gradient_probe"
+}

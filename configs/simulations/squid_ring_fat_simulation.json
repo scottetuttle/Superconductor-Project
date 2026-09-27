@@ -1,0 +1,99 @@
+{
+  "name": "squid_ring_fat",
+  "geometry": "squid_ring_fat_geometry.json",
+  "material": "NbN_tdgl_reference.json",
+  "temperature": 14,
+  "current": {
+    "value": 5e-9,
+    "units": "A"
+  },
+  "time": {
+    "duration": 1.5e-11,
+    "dt": 1.0000000000000002e-14
+  },
+  "thermal": {
+    "bath_temperature": 14,
+    "model": "two_temperature",
+    "electron_heat_capacity_fraction": 0.5,
+    "electron_thermal_conductivity_fraction": 0.7,
+    "electron_phonon_coupling_W_m3_K": 10000000000000000,
+    "phonon_escape_rate_per_s": 10000000000,
+    "max_substep": 1e-13,
+    "stability_safety_factor": 0.9
+  },
+  "laser": {
+    "enabled": false,
+    "absorbed_power_W": 0,
+    "sigma_m": 8e-9,
+    "repeat_path": false,
+    "waypoints": []
+  },
+  "pinning": {
+    "enabled": false,
+    "maximum_suppression": 1,
+    "sites": []
+  },
+  "electrical": {
+    "drive_mode": "current",
+    "source_contact": "left_current",
+    "sink_contact": "right_current",
+    "reference_voltage": 0,
+    "normal_conductivity_model": "condensate_depletion",
+    "solver": {
+      "backend": "sparse_direct",
+      "tolerance": 1e-11,
+      "max_iterations": 100000,
+      "omega": 1.7,
+      "residual_check_interval": 10
+    }
+  },
+  "electromagnetic": {
+    "include_self_field": true,
+    "include_displacement_current": false,
+    "screening_tolerance": 0.0001,
+    "screening_max_iterations": 100,
+    "screening_step_size": 0.3,
+    "screening_source_stride": 1
+  },
+  "tdgl": {
+    "normalization": "pytdgl",
+    "temperature_model": "tc_over_t_minus_one",
+    "u": 5.79,
+    "gamma": 0,
+    "kappa": 1,
+    "include_scalar_potential": true,
+    "max_normalized_timestep": 0.01,
+    "stability_safety_factor": 0.8,
+    "time_integrator": "heun"
+  },
+  "boundaries": {
+    "left": {
+      "type": "fixed_temperature",
+      "temperature": 14
+    },
+    "right": {
+      "type": "fixed_temperature",
+      "temperature": 14
+    },
+    "top": {
+      "type": "insulating"
+    },
+    "bottom": {
+      "type": "insulating"
+    }
+  },
+  "tdgl_boundaries": {
+    "left": {
+      "type": "normal_contact_mask"
+    },
+    "right": {
+      "type": "normal_contact_mask"
+    },
+    "top": {
+      "type": "insulating"
+    },
+    "bottom": {
+      "type": "insulating"
+    }
+  }
+}

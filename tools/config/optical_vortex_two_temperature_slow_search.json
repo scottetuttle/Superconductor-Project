@@ -1,0 +1,104 @@
+{
+  "_documentation": {
+    "purpose": "Longer, slower two-temperature TDGL optical vortex search; each trial is computationally expensive.",
+    "relies_on": "Uses configs/simulations/nbn_optical_vortex_two_temperature.json.",
+    "run_command": "python tools/optical_vortex_search.py --config tools/config/optical_vortex_two_temperature_slow_search.json",
+    "authority": "Values in this file are authoritative for its runner. A sweep value overrides the corresponding base-simulation value only for that named case; effective values are recorded in summary.json.",
+    "fields": {
+      "simulation_config": "Base production simulation JSON built before this runner applies documented experiment controls.",
+      "initial_vortex.x_fraction": "Initial x divided by film width; 0.505 seeds between mesh nodes for unambiguous winding detection.",
+      "initial_vortex.y_fraction": "Initial y divided by film height; 0.505 seeds between mesh nodes for unambiguous winding detection.",
+      "initial_vortex.charge": "Integer vortex winding: +1 is a vortex and -1 an antivortex.",
+      "initial_vortex.core_radius_cells": "Initial vortex-core radius measured in mesh cells.",
+      "path.start_m": "Beam starting point in metres, aligned with the seeded vortex.",
+      "path.direction": "Unit travel direction; reverse control travels in its negative direction.",
+      "path.distance_m": "How far the beam moves during transport, in metres.",
+      "path.initial_hold_s": "Stationary illumination time before beam motion, in seconds.",
+      "path.final_hold_s": "Stationary illumination time after beam motion, in seconds.",
+      "search.magnetic_fields_T": "Applied perpendicular field values to test, in tesla.",
+      "search.laser_powers_W": "Absorbed optical powers to test, in watts; not incident laser power.",
+      "search.laser_speeds_m_s": "Beam path speeds to test, in metres per second.",
+      "search.spot_sigma_m": "Gaussian optical-heating standard deviation in metres.",
+      "search.sample_every": "Save diagnostics every this many accepted steps.",
+      "search.vortex_amplitude_floor": "Minimum corner order-parameter amplitude used to count a winding.",
+      "search.max_track_step_cells": "Maximum vortex jump between saved frames, in grid cells.",
+      "search.maximum_steps_per_trial": "Hard cap on coupled time steps per candidate to bound runtime.",
+      "search.maximum_trials": "Number of distinct field, power, speed combinations to inspect.",
+      "search.sampling_seed": "Random seed for reproducible ordering of the full parameter grid.",
+      "search.stop_at_first_correlation": "Stop once a candidate passes motion and all three controls.",
+      "thresholds.minimum_beam_displacement_m": "Sets minimum beam displacement m; units are metres.",
+      "thresholds.minimum_vortex_displacement_m": "Sets minimum vortex displacement m; units are metres.",
+      "thresholds.minimum_position_correlation": "Required Pearson correlation of beam and vortex displacement along the path.",
+      "thresholds.maximum_rms_lag_m": "Largest allowed RMS separation of vortex and beam throughout transport, in metres.",
+      "thresholds.maximum_initial_offset_m": "Largest accepted mismatch between initial vortex and beam coordinates, in metres.",
+      "thresholds.minimum_control_difference_m": "Moving-beam displacement must exceed no-laser and stationary-beam drift by this distance.",
+      "magnetic_field.gauge": "Vector-potential gauge used to represent the applied magnetic field.",
+      "output.dpi": "Raster resolution of generated figures.",
+      "output.gif_enabled": "Enables or disables gif enabled.",
+      "output.gif_fps": "Configures gif fps.",
+      "output_directory": "Base output directory; runners reserve a numbered sibling if it already exists."
+    }
+  },
+  "simulation_config": "configs/simulations/nbn_optical_vortex_two_temperature.json",
+  "initial_vortex": {
+    "x_fraction": 0.505,
+    "y_fraction": 0.505,
+    "charge": 1,
+    "core_radius_cells": 2.0
+  },
+  "path": {
+    "start_m": [
+      5.05e-08,
+      5.05e-08
+    ],
+    "direction": [
+      0.0,
+      1.0
+    ],
+    "distance_m": 4e-09,
+    "initial_hold_s": 5e-14,
+    "final_hold_s": 2e-14
+  },
+  "search": {
+    "magnetic_fields_T": [
+      0.05,
+      0.2
+    ],
+    "laser_powers_W": [
+      2e-07,
+      5e-07,
+      1e-06,
+      2e-06
+    ],
+    "laser_speeds_m_s": [
+      1000.0,
+      2000.0,
+      5000.0
+    ],
+    "spot_sigma_m": 1e-08,
+    "sample_every": 4,
+    "vortex_amplitude_floor": 1e-08,
+    "max_track_step_cells": 8.0,
+    "maximum_steps_per_trial": 450,
+    "maximum_trials": 12,
+    "sampling_seed": 21,
+    "stop_at_first_correlation": true
+  },
+  "thresholds": {
+    "minimum_beam_displacement_m": 3e-09,
+    "minimum_vortex_displacement_m": 1e-09,
+    "minimum_position_correlation": 0.75,
+    "maximum_rms_lag_m": 5e-09,
+    "maximum_initial_offset_m": 4e-09,
+    "minimum_control_difference_m": 1e-09
+  },
+  "magnetic_field": {
+    "gauge": "symmetric"
+  },
+  "output": {
+    "dpi": 150,
+    "gif_enabled": true,
+    "gif_fps": 8
+  },
+  "output_directory": "benchmark_results/optical_vortex_two_temperature_slow_search"
+}

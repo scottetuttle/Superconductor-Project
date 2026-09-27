@@ -23,7 +23,11 @@ class Fields:
     """
     Container for evolving simulation fields.
 
-    All arrays are defined on the simulation mesh.
+    All arrays are shaped (ny, nx). Temperature is K, voltage V,
+    heat sources W/m^3, currents A/m^2, electric field V/m,
+    magnetic field T, and vector potential T m. psi is dimensionless.
+    Directional electrical/current arrays use outgoing links; the last
+    x column and last y row have no outgoing link.
     """
 
     # Thermal
@@ -48,9 +52,16 @@ class Fields:
 
     magnetic_field_x: np.ndarray
     magnetic_field_y: np.ndarray
+    magnetic_field_z: np.ndarray
 
     vector_potential_x: np.ndarray
     vector_potential_y: np.ndarray
+
+    applied_vector_potential_x: np.ndarray
+    applied_vector_potential_y: np.ndarray
+
+    induced_vector_potential_x: np.ndarray
+    induced_vector_potential_y: np.ndarray
 
     #tdgl
 
@@ -61,6 +72,15 @@ class Fields:
 
     normal_current_density_x: np.ndarray
     normal_current_density_y: np.ndarray
+
+    phonon_temperature: np.ndarray | None = None
+
+    # Volumetric power densities [W/m^3]. heat_source is their total.
+    external_heat_source: np.ndarray | None = None
+    joule_heat_source: np.ndarray | None = None
+    laser_heat_source: np.ndarray | None = None
+    laser_position_x_m: float | None = None
+    laser_position_y_m: float | None = None
 
     @classmethod
     def create(
@@ -140,6 +160,13 @@ class Fields:
                 dtype=float
             ),
 
+            phonon_temperature=np.full(shape, initial_temperature, dtype=float),
+
+            magnetic_field_z=np.zeros(
+                shape,
+                dtype=float
+            ),
+
             vector_potential_x=np.zeros(
                 shape,
                 dtype=float
@@ -149,6 +176,11 @@ class Fields:
                 shape,
                 dtype=float
             ),
+
+            applied_vector_potential_x=np.zeros(shape, dtype=float),
+            applied_vector_potential_y=np.zeros(shape, dtype=float),
+            induced_vector_potential_x=np.zeros(shape, dtype=float),
+            induced_vector_potential_y=np.zeros(shape, dtype=float),
 
             #tdgl
 

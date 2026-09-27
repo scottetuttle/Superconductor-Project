@@ -16,6 +16,7 @@ Future versions will support:
 from dataclasses import dataclass
 
 import numpy as np
+from shs.utils.defaults import default_section
 
 from shs.geometry.geometry import Geometry
 from shs.geometry.mesh import Mesh
@@ -36,6 +37,7 @@ class ContactMap:
 def build_contact_map(
     geometry: Geometry,
     mesh: Mesh,
+    roundoff_ulps=None,
 ) -> ContactMap:
     """
     Build mesh masks for every contact.
@@ -58,19 +60,23 @@ def build_contact_map(
     )
 
 
+    if roundoff_ulps is None:
+        roundoff_ulps = default_section("numerics")["contact_roundoff_ulps"]
+    tolerance = roundoff_ulps * np.spacing(max(abs(mesh.x[-1]), abs(mesh.y[-1])))
+
     for contact in geometry.contacts:
 
 
         mask = (
-            (X >= contact.x)
+            (X >= contact.x - tolerance)
             &
-            (X <= contact.x + contact.x_size)
+            (X <= contact.x + contact.x_size + tolerance)
 
             &
 
-            (Y >= contact.y)
+            (Y >= contact.y - tolerance)
             &
-            (Y <= contact.y + contact.y_size)
+            (Y <= contact.y + contact.y_size + tolerance)
         )
 
 

@@ -26,6 +26,8 @@ from .boundary import (
     TDGLBoundaryType,
     TDGLBoundaryCondition,
     TDGLBoundarySet,
+    apply_normal_contact_boundary,
+    apply_normal_contact_mask,
 )
 from .scaling import TDGLScales
 
@@ -47,19 +49,20 @@ __all__ = [
     "equilibrium_superconducting_state",
     "TDGLParameters",
     "TDGLModel",
-    "supercurrent_density"
     "gradient",
     "covariant_gradient",
     "covariant_laplacian",
     "laplacian",
     "TDGLScales",
     "gauge_link_x",
-    "gauge_link_y"
+    "gauge_link_y",
     "gauge_covariant_gradient",
     "TDGLBoundaryCondition",
     "TDGLBoundarySide",
     "TDGLBoundaryType",
     "TDGLBoundarySet",
+    "apply_normal_contact_boundary",
+    "apply_normal_contact_mask",
     "order_parameter_amplitude",
     "order_parameter_amplitude_squared",
     "order_parameter_phase",

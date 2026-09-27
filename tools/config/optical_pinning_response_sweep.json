@@ -1,0 +1,47 @@
+{
+  "_documentation": {
+    "purpose": "Compare early laser-driven vortex motion with pinning disabled and with a Gaussian defect at the vortex. Each case has a cloned laser-off control.",
+    "relies_on": "The referenced NbN simulation defines the mesh, material, two-temperature coefficients, TDGL integration and timestep. This runner overrides the pinning landscape, laser, field and applied current for each case.",
+    "run_command": "python tools/optical_pinning_response_sweep.py --config tools/config/optical_pinning_response_sweep.json",
+    "quick_command": "python tools/optical_pinning_response_sweep.py --max-cases 2 --dark-steps 5 --exposure-steps 20",
+    "interpretation": "Pinning strengths are dimensionless reductions of the local GL coefficient, not calibrated pinning forces. Reported gradients are drive proxies, and velocity is dark-subtracted finite-window motion. Short runs may end before thermal equilibration or depinning.",
+    "fields": {
+      "simulation_config": "Base simulation JSON for material, film, TDGL and thermal solver settings.",
+      "applied_field_T": "Uniform perpendicular magnetic field in tesla.",
+      "initial_vortex": "Initial topological vortex seed in fractional film coordinates with charge and core radius.",
+      "seed_position_m": "Physical vortex seed used as the reference for defect and laser positions.",
+      "pinning.enabled": "False forces an unpinned sweep; true sweeps the listed strengths, including zero as an unpinned control.",
+      "pinning.strengths": "Dimensionless Gaussian GL-coefficient suppression amplitudes. Zero disables the defect for that case.",
+      "pinning.sigma_m": "Gaussian defect standard deviation in metres.",
+      "pinning.site_offset_m": "Defect-center [dx,dy] from the seed in metres; [0,0] starts the vortex at the defect.",
+      "pinning.maximum_suppression": "Cap on total dimensionless GL-coefficient suppression.",
+      "sweep.direction": "Beam direction from the seed; normalized by the runner.",
+      "sweep.offsets_m": "Beam distances from the seeded vortex in metres.",
+      "sweep.powers_W": "Absorbed, not incident, laser powers in watts.",
+      "sweep.spot_sigma_m": "Gaussian optical-heating spot standard deviation in metres.",
+      "timing.dark_steps": "Laser-off preparation steps before each case branches into illuminated and dark controls.",
+      "timing.exposure_steps": "Maximum short-time exposure steps; stops early if the electron temperature reaches Tc.",
+      "timing.sample_every": "Accepted steps between velocity and local-gradient samples.",
+      "output_directory": "Base result path; numbered runs preserve previous results."
+    }
+  },
+  "simulation_config": "configs/simulations/nbn_optical_vortex_unpinned.json",
+  "applied_field_T": 0.2,
+  "initial_vortex": {"x_fraction": 0.505, "y_fraction": 0.505, "charge": 1, "core_radius_cells": 2.0},
+  "seed_position_m": [5.05e-8, 5.05e-8],
+  "pinning": {
+    "enabled": true,
+    "strengths": [0.025],
+    "sigma_m": 2.5e-9,
+    "site_offset_m": [0.0, 0.0],
+    "maximum_suppression": 1.0
+  },
+  "sweep": {
+    "direction": [0.0, 1.0],
+    "offsets_m": [1.5e-8, 1.75e-8, 2.0e-8],
+    "powers_W": [2.5e-7, 5.0e-7],
+    "spot_sigma_m": 1.0e-8
+  },
+  "timing": {"dark_steps": 40, "exposure_steps": 100, "sample_every": 5},
+  "output_directory": "benchmark_results/optical_pinning_response_sweep"
+}

@@ -1,0 +1,24 @@
+{
+  "_documentation": {
+    "purpose": "Test ordinary and link-parallel-transport coarse-exterior representations on the centered early-time 150 nm reference, isolated from production solvers.",
+    "relies_on": "Reads one completed overnight checkpoint and its exact base simulation configuration. It reconstructs coarse samples onto the fine grid solely for comparison.",
+    "run_command": "python tools/nested_mesh_feasibility.py --config tools/config/nested_mesh_feasibility.json",
+    "limitations": "This is not yet an evolving AMR solver and cannot demonstrate wall-clock acceleration. Raw complex-field interpolation is assessed using gauge-covariant link-phase errors; production coarse/fine transfer still requires a conservative gauge-covariant operator.",
+    "fields": {
+      "source_run_directory": "Result directory containing state.json and its retained checkpoint.",
+      "simulation_config": "Base simulation used to recover mesh and TDGL normalization.",
+      "coarse_factor": "Ratio of coarse to fine grid spacing; must divide nx-1 and ny-1.",
+      "fine_patch_radius_m": "Radius retained exactly around the checkpoint vortex center.",
+      "transition_width_m": "Cosine-blended comparison band outside the exact fine patch.",
+      "output_subdirectory": "Directory created inside the source result directory.",
+      "output_dpi": "Resolution of the comparison figure."
+    }
+  },
+  "source_run_directory": "benchmark_results/nested_mesh_simple_reference_2",
+  "simulation_config": "configs/simulations/nbn_optical_vortex_large_unpinned.json",
+  "coarse_factor": 5,
+  "fine_patch_radius_m": 2e-08,
+  "transition_width_m": 5e-09,
+  "output_subdirectory": "nested_mesh_feasibility",
+  "output_dpi": 140
+}

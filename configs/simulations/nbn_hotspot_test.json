@@ -1,80 +1,158 @@
 {
-    "name": "NbN hotspot test",
-
-    "geometry": "NbN_film.json",
-    "material": "NbN.json",
-
-    "temperature": 9.0,
-
-    "current": {
-        "value": 0.01,
-        "units": "A"
-    },
-
-    "time": {
-        "duration": 1e-6,
-        "dt": 1e-9
-    },
-
-    "thermal": {
-        "bath_temperature": 9.0,
-        "thermal_relaxation_rate": 1,
-        "max_substep": 1e-13
-    },
-
-    "electrical": {
-        "voltage_left": 0.001,
-        "voltage_right": 0.0,
-
-        "solver": {
-            "tolerance": 1e-10,
-            "max_iterations": 10000,
-            "omega": 1.7
-        }
-    },
-
-    "tdgl": {
-        "u": 5.79,
-        "gamma": 0.0,
-        "kappa": 1.0,
-        "max_normalized_timestep": 0.01
-    },
-
-    "boundaries": {
-        "left": {
-            "type": "fixed_temperature",
-            "temperature": 5.0
-        },
-
-        "right": {
-            "type": "fixed_temperature",
-            "temperature": 5.0
-        },
-
-        "top": {
-            "type": "insulating"
-        },
-
-        "bottom": {
-            "type": "insulating"
-        }
-    },
-
-    "tdgl_boundaries": {
-        "left": {
-            "type": "insulating"
-        },
-
-        "right": {
-            "type": "insulating"
-        },
-
-        "top": {
-            "type": "insulating"
-        },
-
-        "bottom": {
-            "type": "insulating"
-        }
+  "_documentation": {
+    "purpose": "Defines the reusable simulation named 'NbN hotspot test'.",
+    "relies_on": "Loaded by a simulation or experiment configuration; packaged defaults fill only omitted optional simulation controls.",
+    "run_command": "Not run directly; reference this filename from a simulation or tool configuration.",
+    "authority": "Values in this file are authoritative for its runner. A sweep value overrides the corresponding base-simulation value only for that named case; effective values are recorded in summary.json.",
+    "fields": {
+      "name": "Human-readable identifier.",
+      "geometry": "Geometry JSON filename loaded from configs/geometry.",
+      "material": "Material JSON filename or material-property object.",
+      "temperature": "Initial uniform temperature in kelvin.",
+      "current.value": "Configures value.",
+      "current.units": "Configures units.",
+      "time.duration": "Requested physical duration.",
+      "time.dt": "Physical integration timestep.",
+      "thermal.bath_temperature": "Thermal-reservoir temperature toward which the film relaxes.",
+      "thermal.thermal_relaxation_rate": "Linear heat-removal coefficient coupling the film to its bath.",
+      "thermal.max_substep": "Upper limit for substep.",
+      "thermal.stability_safety_factor": "Safety margin used when choosing an explicit stable timestep.",
+      "electrical.normal_conductivity_model": "Selects how normal-carrier conductivity varies with superconducting state and temperature.",
+      "electrical.voltage_left": "Potential imposed at the left transport boundary.",
+      "electrical.voltage_right": "Potential imposed at the right transport boundary.",
+      "electrical.solver.backend": "Selects the numerical implementation for this solver component.",
+      "electrical.solver.tolerance": "Numerical or physical acceptance tolerance for tolerance.",
+      "electrical.solver.max_iterations": "Upper limit for iterations.",
+      "electrical.solver.omega": "Successive-over-relaxation weight for the iterative solve.",
+      "electrical.solver.residual_check_interval": "Iterations between residual evaluations.",
+      "tdgl.normalization": "Selects the dimensional scaling used by the TDGL equation.",
+      "tdgl.temperature_model": "Selects how temperature modifies the TDGL coefficients.",
+      "tdgl.u": "Dimensionless TDGL order-parameter relaxation constant.",
+      "tdgl.gamma": "Generalized TDGL inelastic-relaxation parameter; zero selects the simpler gapless form.",
+      "tdgl.kappa": "Ginzburg-Landau penetration-depth to coherence-length ratio.",
+      "tdgl.max_normalized_timestep": "Upper limit for normalized timestep.",
+      "tdgl.stability_safety_factor": "Safety margin used when choosing an explicit stable timestep.",
+      "coupling.tolerance": "Numerical or physical acceptance tolerance for tolerance.",
+      "coupling.max_iterations": "Upper limit for iterations.",
+      "coupling.minimum_iterations": "Lower limit for iterations.",
+      "coupling.check_interval": "Iterations between convergence-controller decisions.",
+      "coupling.prediction_window": "Recent residual values used to estimate convergence behavior.",
+      "coupling.reasonable_iterations": "Iteration count treated as acceptable when scoring a benchmark.",
+      "coupling.fast_ratio": "Residual-reduction ratio below which convergence is fast.",
+      "coupling.healthy_ratio": "Residual-reduction ratio below which convergence is healthy.",
+      "coupling.stall_ratio": "Residual-reduction ratio above which progress is stalled.",
+      "coupling.oscillation_window": "Residual-history length used to detect oscillation.",
+      "coupling.electrical_tolerance_fraction": "Numerical or physical acceptance tolerance for electrical fraction.",
+      "coupling.field_scales.temperature": "Initial uniform temperature in kelvin.",
+      "coupling.field_scales.psi": "Configures psi.",
+      "coupling.field_scales.voltage": "Configures voltage.",
+      "coupling.field_scales.vector_potential_x": "Configures vector potential x.",
+      "coupling.field_scales.vector_potential_y": "Configures vector potential y.",
+      "numerics.max_internal_substeps": "Upper limit for internal substeps.",
+      "numerics.contact_roundoff_ulps": "Configures contact roundoff ulps.",
+      "boundaries.left.type": "Selects the geometry, boundary, contact, or model type.",
+      "boundaries.left.temperature": "Initial uniform temperature in kelvin.",
+      "boundaries.right.type": "Selects the geometry, boundary, contact, or model type.",
+      "boundaries.right.temperature": "Initial uniform temperature in kelvin.",
+      "boundaries.top.type": "Selects the geometry, boundary, contact, or model type.",
+      "boundaries.bottom.type": "Selects the geometry, boundary, contact, or model type.",
+      "tdgl_boundaries.left.type": "Selects the geometry, boundary, contact, or model type.",
+      "tdgl_boundaries.right.type": "Selects the geometry, boundary, contact, or model type.",
+      "tdgl_boundaries.top.type": "Selects the geometry, boundary, contact, or model type.",
+      "tdgl_boundaries.bottom.type": "Selects the geometry, boundary, contact, or model type."
     }
+  },
+  "name": "NbN hotspot test",
+  "geometry": "NbN_film.json",
+  "material": "NbN.json",
+  "temperature": 9.0,
+  "current": {
+    "value": 0.01,
+    "units": "A"
+  },
+  "time": {
+    "duration": 1e-06,
+    "dt": 1e-09
+  },
+  "thermal": {
+    "bath_temperature": 9.0,
+    "thermal_relaxation_rate": 1,
+    "max_substep": 1e-13,
+    "stability_safety_factor": 0.9
+  },
+  "electrical": {
+    "normal_conductivity_model": "condensate_depletion",
+    "voltage_left": 0.001,
+    "voltage_right": 0.0,
+    "solver": {
+      "backend": "sparse_direct",
+      "tolerance": 1e-10,
+      "max_iterations": 100000,
+      "omega": 1.7,
+      "residual_check_interval": 10
+    }
+  },
+  "tdgl": {
+    "normalization": "legacy_gl",
+    "temperature_model": "one_minus_t_over_tc",
+    "u": 5.79,
+    "gamma": 0.0,
+    "kappa": 1.0,
+    "max_normalized_timestep": 0.01,
+    "stability_safety_factor": 0.8
+  },
+  "coupling": {
+    "tolerance": 1e-08,
+    "max_iterations": 1000,
+    "minimum_iterations": 1,
+    "check_interval": 10,
+    "prediction_window": 10,
+    "reasonable_iterations": 50,
+    "fast_ratio": 0.5,
+    "healthy_ratio": 0.95,
+    "stall_ratio": 0.999,
+    "oscillation_window": 4,
+    "electrical_tolerance_fraction": 0.25,
+    "field_scales": {
+      "temperature": 1.0,
+      "psi": 1.0,
+      "voltage": 0.001,
+      "vector_potential_x": 1e-07,
+      "vector_potential_y": 1e-07
+    }
+  },
+  "numerics": {
+    "max_internal_substeps": 1000000,
+    "contact_roundoff_ulps": 8
+  },
+  "boundaries": {
+    "left": {
+      "type": "fixed_temperature",
+      "temperature": 9.0
+    },
+    "right": {
+      "type": "fixed_temperature",
+      "temperature": 9.0
+    },
+    "top": {
+      "type": "insulating"
+    },
+    "bottom": {
+      "type": "insulating"
+    }
+  },
+  "tdgl_boundaries": {
+    "left": {
+      "type": "insulating"
+    },
+    "right": {
+      "type": "insulating"
+    },
+    "top": {
+      "type": "insulating"
+    },
+    "bottom": {
+      "type": "insulating"
+    }
+  }
 }

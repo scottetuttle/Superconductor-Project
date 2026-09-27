@@ -1,52 +1,66 @@
 {
-    "type": "rectangle",
-
-    "name": "NbN_test_film",
-
-    "width": 5e-6,
-    "height": 5e-6,
-    "thickness": 100e-9,
-
-    "nx": 100,
-    "ny": 100,
-
-    "regions": [
-        {
-            "name": "NbN film",
-            "region_type": "superconductor",
-            "material": "NbN"
-        }
-    ],
-    "contacts": [
-    {
-        "name": "left_current",
-        "contact_type": "current",
-
-        "x": 0.0,
-        "y": 2.0e-6,
-
-        "x_size": 2.0e-7,
-        "y_size": 1.0e-6
-    },
-    {
-        "name": "right_current",
-        "contact_type": "current",
-
-        "x": 4.8e-6,
-        "y": 2.0e-6,
-
-        "x_size": 2.0e-7,
-        "y_size": 1.0e-6
-    },
-        {
-        "name": "left_voltage",
-        "contact_type": "voltage",
-
-        "x": 2.4e-6,
-        "y": 2.0e-6,
-
-        "x_size": 2.0e-7,
-        "y_size": 2.0e-7
+  "_documentation": {
+    "purpose": "Defines the reusable geometr named 'NbN_test_film'.",
+    "relies_on": "Loaded by a simulation or experiment configuration; packaged defaults fill only omitted optional simulation controls.",
+    "run_command": "Not run directly; reference this filename from a simulation or tool configuration.",
+    "authority": "Values in this file are authoritative for its runner. A sweep value overrides the corresponding base-simulation value only for that named case; effective values are recorded in summary.json.",
+    "fields": {
+      "type": "Selects the geometry, boundary, contact, or model type.",
+      "name": "Human-readable identifier.",
+      "width": "Physical width in metres.",
+      "height": "Physical height in metres.",
+      "thickness": "Film thickness in metres.",
+      "nx": "Number of mesh nodes along x.",
+      "ny": "Number of mesh nodes along y.",
+      "regions[].material": "Material JSON filename or material-property object.",
+      "regions[].name": "Human-readable identifier.",
+      "regions[].region_type": "Behavior assigned to this geometric region.",
+      "contacts[].contact_type": "Electrical boundary condition applied at this contact.",
+      "contacts[].name": "Human-readable identifier.",
+      "contacts[].x": "Configures x.",
+      "contacts[].x_size": "Configures x size.",
+      "contacts[].y": "Configures y.",
+      "contacts[].y_size": "Configures y size."
     }
-]
+  },
+  "type": "rectangle",
+  "name": "NbN_test_film",
+  "width": 5e-08,
+  "height": 5e-08,
+  "thickness": 1e-07,
+  "nx": 100,
+  "ny": 100,
+  "regions": [
+    {
+      "name": "NbN film",
+      "region_type": "superconductor",
+      "material": "NbN"
+    }
+  ],
+  "contacts": [
+    {
+      "name": "left_current",
+      "contact_type": "current",
+      "x": 0.0,
+      "y": 2e-09,
+      "x_size": 2e-09,
+      "y_size": 1e-09
+    },
+    {
+      "name": "right_current",
+      "contact_type": "current",
+      "x": 4.8e-09,
+      "y": 2e-09,
+      "x_size": 2e-09,
+      "y_size": 1e-09
+    },
+    {
+      "name": "left_voltage",
+      "contact_type": "voltage",
+      "x": 2.4e-09,
+      "y": 2e-09,
+      "x_size": 2e-09,
+      "y_size": 2e-09
+    }
+  ]
 }

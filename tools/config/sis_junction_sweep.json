@@ -1,0 +1,60 @@
+{
+  "_documentation": {
+    "purpose": "Runs the sis junction sweep experiment or benchmark.",
+    "relies_on": "Uses only the physics values in this file.",
+    "run_command": "python tools/sis_junction_diagnostics.py --config tools/config/sis_junction_sweep.json",
+    "authority": "Values in this file are authoritative for its runner. A sweep value overrides the corresponding base-simulation value only for that named case; effective values are recorded in summary.json.",
+    "fields": {
+      "temperature_K": "Sets temperature K; units are kelvin.",
+      "critical_temperature_K": "Sets critical temperature K; units are kelvin.",
+      "junction.critical_current_A": "Zero-field SIS critical current; null requests Ambegaokar-Baratoff calculation.",
+      "junction.normal_resistance_ohm": "Normal/shunt resistance of the SIS junction.",
+      "junction.capacitance_F": "Junction capacitance.",
+      "junction.magnetic_flux_quanta": "Configures magnetic flux quanta.",
+      "drive.mode": "Configures mode.",
+      "drive.dc": "Configures dc.",
+      "drive.ac_amplitude": "Configures ac amplitude.",
+      "drive.frequency_Hz": "Microwave drive frequency.",
+      "sweep_dc_values": "DC drive values included in the sweep.",
+      "initial_phase_rad": "Initial junction phase difference in radians.",
+      "run.duration_s": "Sets duration s; units are seconds.",
+      "run.samples": "Configures samples.",
+      "run.max_step_s": "Sets max step s; units are seconds.",
+      "run.rtol": "Relative numerical tolerance.",
+      "run.atol": "Absolute numerical tolerance in the associated quantity's units.",
+      "output_directory": "Base output directory; runners reserve a numbered sibling if it already exists."
+    }
+  },
+  "temperature_K": 4.2,
+  "critical_temperature_K": 9.2,
+  "junction": {
+    "critical_current_A": 2e-06,
+    "normal_resistance_ohm": 20.0,
+    "capacitance_F": 2e-13,
+    "magnetic_flux_quanta": 0.0
+  },
+  "drive": {
+    "mode": "current",
+    "dc": 0.0,
+    "ac_amplitude": 0.0,
+    "frequency_Hz": 5000000000.0
+  },
+  "sweep_dc_values": [
+    -4e-06,
+    -2.5e-06,
+    -1.5e-06,
+    0.0,
+    1.5e-06,
+    2.5e-06,
+    4e-06
+  ],
+  "initial_phase_rad": 0.0,
+  "run": {
+    "duration_s": 5e-09,
+    "samples": 1500,
+    "max_step_s": 2e-12,
+    "rtol": 1e-07,
+    "atol": 1e-10
+  },
+  "output_directory": "benchmark_results/sis_junction_sweep"
+}

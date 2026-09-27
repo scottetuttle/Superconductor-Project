@@ -1,11 +1,32 @@
-
 {
-    "name": "NbN",
-    "Tc": 15.5,
-    "coherence_length": 5e-9,
-    "penetration_depth": 2e-7,
-    "thermal_conductivity": 10,
-    "heat_capacity": 2000000,
-    "normal_resistivity": 1e-6,
-    "thickness": 1e-7
+  "_documentation": {
+    "purpose": "Defines the reusable material named 'NbN'.",
+    "relies_on": "Loaded by a simulation or experiment configuration; packaged defaults fill only omitted optional simulation controls.",
+    "run_command": "Not run directly; reference this filename from a simulation or tool configuration.",
+    "authority": "Values in this file are authoritative for its runner. A sweep value overrides the corresponding base-simulation value only for that named case; effective values are recorded in summary.json.",
+    "fields": {
+      "name": "Human-readable identifier.",
+      "Tc": "Critical temperature above which equilibrium superconductivity vanishes.",
+      "coherence_length": "Superconducting coherence length used for spatial TDGL scaling.",
+      "penetration_depth": "London penetration depth used for magnetic scaling and validity checks.",
+      "gl_alpha": "Linear Ginzburg-Landau free-energy coefficient.",
+      "gl_beta": "Nonlinear Ginzburg-Landau free-energy coefficient.",
+      "tdgl_u": "Material default for the dimensionless TDGL relaxation constant.",
+      "thermal_conductivity": "Material heat-conduction coefficient.",
+      "heat_capacity": "Volumetric heat capacity used by thermal evolution.",
+      "normal_resistivity": "Normal-state electrical resistivity.",
+      "thickness": "Film thickness in metres."
+    }
+  },
+  "name": "NbN",
+  "Tc": 15.5,
+  "coherence_length": 5e-09,
+  "penetration_depth": 2e-07,
+  "gl_alpha": 1.0,
+  "gl_beta": 1.0,
+  "tdgl_u": 5.79,
+  "thermal_conductivity": 10,
+  "heat_capacity": 2000000,
+  "normal_resistivity": 1e-06,
+  "thickness": 1e-07
 }

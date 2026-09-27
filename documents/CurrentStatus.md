@@ -1,3 +1,5 @@
+> September 14, 2026 update: see [solver corrections and validation](SolverCorrections_2026-09-14.md) for the current implementation and 181-test result. The text below records the earlier development stage.
+
 Superconducting Hotspot Simulator — Current Status
 
 Last updated: 2026-08-27

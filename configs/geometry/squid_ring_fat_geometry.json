@@ -1,0 +1,43 @@
+{
+  "type": "rectangle",
+  "name": "squid_ring_fat",
+  "width": 1.2000000000000002e-7,
+  "height": 1.2000000000000002e-7,
+  "thickness": 2e-9,
+  "nx": 121,
+  "ny": 121,
+  "regions": [
+    {
+      "name": "squid_ring_fat film",
+      "region_type": "superconductor",
+      "material": "NbN_tdgl_reference"
+    }
+  ],
+  "holes": [
+    {
+      "name": "central_hole",
+      "shape": "circle",
+      "x": 6.000000000000001e-8,
+      "y": 6.000000000000001e-8,
+      "radius": 2.5000000000000002e-8
+    }
+  ],
+  "contacts": [
+    {
+      "name": "left_current",
+      "contact_type": "current",
+      "x": 0,
+      "y": 0,
+      "x_size": 0,
+      "y_size": 1.2000000000000002e-7
+    },
+    {
+      "name": "right_current",
+      "contact_type": "current",
+      "x": 1.2000000000000002e-7,
+      "y": 0,
+      "x_size": 0,
+      "y_size": 1.2000000000000002e-7
+    }
+  ]
+}

@@ -13,10 +13,20 @@ def test_tdgl_parameters_are_valid():
     assert parameters.validate()
 
 
+def test_pytdgl_temperature_coefficient_and_time_scale():
+    model = TDGLModel(TDGLParameters())
+
+    assert np.isclose(model.temperature_coefficient(0.95), 1 / 0.95 - 1)
+    assert np.isclose(
+        model.characteristic_time(15.5, 1e6, 2e-7),
+        4e-7 * np.pi * 1e6 * (2e-7) ** 2,
+    )
+
+
 def test_tdgl_equilibrium_amplitude_zero_temperature():
 
     model = TDGLModel(
-        TDGLParameters()
+        TDGLParameters(normalization="legacy_gl", temperature_model="one_minus_t_over_tc")
     )
 
     assert np.isclose(
@@ -28,7 +38,7 @@ def test_tdgl_equilibrium_amplitude_zero_temperature():
 def test_tdgl_equilibrium_amplitude_half_tc():
 
     model = TDGLModel(
-        TDGLParameters()
+        TDGLParameters(normalization="legacy_gl", temperature_model="one_minus_t_over_tc")
     )
 
     expected = np.sqrt(0.5)
@@ -42,7 +52,7 @@ def test_tdgl_equilibrium_amplitude_half_tc():
 def test_tdgl_equilibrium_amplitude_near_tc():
 
     model = TDGLModel(
-        TDGLParameters()
+        TDGLParameters(normalization="legacy_gl", temperature_model="one_minus_t_over_tc")
     )
 
     expected = np.sqrt(0.05)
@@ -56,7 +66,7 @@ def test_tdgl_equilibrium_amplitude_near_tc():
 def test_tdgl_equilibrium_amplitude_at_tc():
 
     model = TDGLModel(
-        TDGLParameters()
+        TDGLParameters(normalization="legacy_gl", temperature_model="one_minus_t_over_tc")
     )
 
     assert np.isclose(
@@ -68,7 +78,7 @@ def test_tdgl_equilibrium_amplitude_at_tc():
 def test_tdgl_equilibrium_amplitude_above_tc():
 
     model = TDGLModel(
-        TDGLParameters()
+        TDGLParameters(normalization="legacy_gl", temperature_model="one_minus_t_over_tc")
     )
 
     assert np.isclose(
@@ -80,7 +90,7 @@ def test_tdgl_equilibrium_amplitude_above_tc():
 def test_tdgl_equilibrium_amplitude_squared():
 
     model = TDGLModel(
-        TDGLParameters()
+        TDGLParameters(normalization="legacy_gl", temperature_model="one_minus_t_over_tc")
     )
 
     assert np.isclose(
@@ -92,7 +102,7 @@ def test_tdgl_equilibrium_amplitude_squared():
 def test_tdgl_equilibrium_order_parameter():
 
     model = TDGLModel(
-        TDGLParameters()
+        TDGLParameters(normalization="legacy_gl", temperature_model="one_minus_t_over_tc")
     )
 
     psi = model.equilibrium_order_parameter(

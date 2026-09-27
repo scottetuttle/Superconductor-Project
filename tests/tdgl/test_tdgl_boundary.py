@@ -35,6 +35,8 @@ import numpy as np
 
 from shs.tdgl.boundary import (
     apply_insulating_boundary,
+    apply_normal_contact_boundary,
+    apply_normal_contact_mask,
 )
 
 
@@ -130,8 +132,7 @@ def test_insulating_boundary_enforces_covariant_normal_derivative():
         # Left
 
     Dx_left = (
-        (result[:, 1] - result[:, 0]) / dx
-        - 1j * Ax[:, 0] * result[:, 0]
+        (np.exp(-1j*Ax[:, 0]*dx)*result[:, 1] - result[:, 0]) / dx
     )
 
     assert np.allclose(
@@ -142,8 +143,7 @@ def test_insulating_boundary_enforces_covariant_normal_derivative():
     # Right
 
     Dx_right = (
-        (result[:, -1] - result[:, -2]) / dx
-        - 1j * Ax[:, -1] * result[:, -1]
+        (np.exp(-1j*Ax[:, -2]*dx)*result[:, -1] - result[:, -2]) / dx
     )
 
     assert np.allclose(
@@ -154,8 +154,7 @@ def test_insulating_boundary_enforces_covariant_normal_derivative():
     # Bottom
 
     Dy_bottom = (
-        (result[1, :] - result[0, :]) / dy
-        - 1j * Ay[0, :] * result[0, :]
+        (np.exp(-1j*Ay[0, :]*dy)*result[1, :] - result[0, :]) / dy
     )
 
     assert np.allclose(
@@ -166,11 +165,45 @@ def test_insulating_boundary_enforces_covariant_normal_derivative():
     # Top
 
     Dy_top = (
-        (result[-1, :] - result[-2, :]) / dy
-        - 1j * Ay[-1, :] * result[-1, :]
+        (np.exp(-1j*Ay[-2, :]*dy)*result[-1, :] - result[-2, :]) / dy
     )
 
     assert np.allclose(
         Dy_top,
         0.0,
     )
+
+
+def test_normal_contact_boundary_sets_only_selected_edges_to_zero():
+    psi = np.ones((5, 6), dtype=complex)
+
+    result = apply_normal_contact_boundary(
+        psi,
+        [TDGLBoundarySide.LEFT, TDGLBoundarySide.TOP],
+    )
+
+    assert np.all(result[:, 0] == 0.0)
+    assert np.all(result[-1, :] == 0.0)
+    assert np.all(result[:-1, 1:] == 1.0)
+
+
+def test_normal_contact_mask_supports_partial_edge_terminal():
+    psi = np.ones((7, 9), dtype=complex)
+    mask = np.zeros_like(psi, dtype=bool)
+    mask[2:5, 0] = True
+
+    result = apply_normal_contact_mask(psi, mask)
+
+    assert np.all(result[2:5, 0] == 0.0)
+    assert np.all(result[[0, 1, 5, 6], 0] == 1.0)
+    assert np.all(result[:, 1:] == 1.0)
+
+
+def test_normal_contact_mask_rejects_interior_terminal():
+    psi = np.ones((7, 9), dtype=complex)
+    mask = np.zeros_like(psi, dtype=bool)
+    mask[3, 4] = True
+
+    import pytest
+    with pytest.raises(ValueError, match="outer mesh boundary"):
+        apply_normal_contact_mask(psi, mask)

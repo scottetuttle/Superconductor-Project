@@ -46,6 +46,23 @@ class VoltageProbe:
     y: float
 
 
+@dataclass(frozen=True)
+class Hole:
+    """An insulating cutout removed from the superconducting film.
+
+    Coordinates and dimensions use SI metres. Circular holes use ``radius``;
+    rectangular holes use ``width`` and ``height``.
+    """
+
+    name: str
+    shape: str
+    x: float
+    y: float
+    radius: float | None = None
+    width: float | None = None
+    height: float | None = None
+
+
 @dataclass
 class RectangularFilm:
 
@@ -60,6 +77,7 @@ class RectangularFilm:
 
     regions: list[Region] | None = None
     contacts: list[Contact] | None = None
+    holes: list[Hole] | None = None
 
 
 @dataclass
@@ -75,3 +93,5 @@ class Geometry:
     voltage_probes: List[VoltageProbe]
 
     regions: List[Region]
+
+    holes: List[Hole] | None = None

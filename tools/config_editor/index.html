@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>SHS Experiment Designer</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header>
+    <div><span class="eyebrow">SUPERCONDUCTING HOTSPOT SIMULATOR</span><h1>Experiment Designer</h1></div>
+    <div class="header-actions">
+      <label class="file-button">Import project<input id="importProject" type="file" accept="application/json"></label>
+      <button id="resetProject" class="secondary">Reset</button>
+    </div>
+  </header>
+  <main>
+    <aside class="panel controls">
+      <section class="preset-section">
+        <h2>Experiment default</h2>
+        <label>Starting point<select id="experimentPreset">
+          <option value="basic_film">Basic film</option>
+          <option value="current_vortex">Current-driven vortex</option>
+          <option value="optical_tweezer">Optical tweezer</option>
+          <option value="optical_junction">Optical junction transport</option>
+          <option value="sns_junction">SNS / weak-link junction</option>
+          <option value="squid_ring">Perforated ring / SQUID</option>
+          <option value="hotspot">Two-temperature hotspot</option>
+        </select></label>
+        <p id="presetDescription" class="preset-description"></p>
+        <button id="applyPreset">Load these defaults</button>
+        <p class="hint">Loading a default replaces the current drawing. Afterward, every object and parameter remains editable.</p>
+      </section>
+      <section>
+        <h2>Device</h2>
+        <label>Name<input id="projectName" value="drawn_tdgl_experiment"></label>
+        <div class="grid2">
+          <label>Width (nm)<input id="widthNm" type="number" min="2" value="100"></label>
+          <label>Height (nm)<input id="heightNm" type="number" min="2" value="70"></label>
+          <label>Thickness (nm)<input id="thicknessNm" type="number" min="0.1" value="2"></label>
+          <label>Grid X<input id="nx" type="number" min="8" value="161"></label>
+          <label>Grid Y<input id="ny" type="number" min="8" value="113"></label>
+          <label>Material<input id="material" value="NbN_tdgl_reference"></label>
+        </div>
+      </section>
+      <section>
+        <h2>Drawing tools</h2>
+        <div id="toolButtons" class="tool-grid">
+          <button data-tool="select" class="active">Select / move</button>
+          <button data-tool="circle">Circle hole</button>
+          <button data-tool="rectangle">Rectangle hole</button>
+          <button data-tool="vortex+">+ Vortex</button>
+          <button data-tool="vortex-">− Vortex</button>
+          <button data-tool="laser">Laser path</button>
+        </div>
+        <div class="grid2 compact">
+          <label>Hole radius (nm)<input id="holeRadiusNm" type="number" min="0.2" value="7.5"></label>
+          <label>Rect width (nm)<input id="holeWidthNm" type="number" min="0.2" value="12"></label>
+          <label>Rect height (nm)<input id="holeHeightNm" type="number" min="0.2" value="8"></label>
+          <label>Vortex core (cells)<input id="coreCells" type="number" min="0.5" value="2"></label>
+          <label>Path interval (fs)<input id="pathIntervalFs" type="number" min="0.001" value="50"></label>
+          <label>Point power (0–1)<input id="pointPower" type="number" min="0" max="1" step="0.05" value="1"></label>
+        </div>
+        <p class="hint">Click to place. In Select mode, drag objects or click one to edit it. Laser clicks append timed waypoints.</p>
+      </section>
+      <section>
+        <h2>Selected object</h2>
+        <div id="selectionEditor" class="empty">Nothing selected.</div>
+      </section>
+    </aside>
+
+    <section class="workspace">
+      <div class="canvas-toolbar">
+        <span id="modeLabel">Mode: Select / move</span>
+        <span class="legend"><i class="hole"></i>hole <i class="vp"></i>+ vortex <i class="vm"></i>− vortex <i class="laser"></i>laser</span>
+      </div>
+      <div class="canvas-shell"><canvas id="deviceCanvas"></canvas></div>
+      <div id="status" class="status">Ready.</div>
+    </section>
+
+    <aside class="panel parameters">
+      <section>
+        <h2>Physics</h2>
+        <div class="grid2">
+          <label>Temperature (K)<input id="temperatureK" type="number" step="0.1" value="14"></label>
+          <label>Current (nA)<input id="currentNa" type="number" step="0.1" value="0"></label>
+          <label>Applied Bz (T)<input id="fieldT" type="number" step="0.01" value="0.4"></label>
+          <label>Laser power (nW)<input id="laserPowerNw" type="number" min="0" value="500"></label>
+          <label>Laser sigma (nm)<input id="laserSigmaNm" type="number" min="0.1" value="8"></label>
+          <label>Time step (fs)<input id="dtFs" type="number" min="0.001" value="10"></label>
+          <label>Steps<input id="steps" type="number" min="1" value="100"></label>
+          <label>Sample every<input id="sampleEvery" type="number" min="1" value="1"></label>
+        </div>
+        <label class="check"><input id="selfField" type="checkbox" checked> Self-consistent magnetic screening</label>
+        <label class="check"><input id="scalarPotential" type="checkbox" checked> TDGL scalar potential</label>
+        <label class="check"><input id="normalContacts" type="checkbox"> Normal left/right contacts</label>
+      </section>
+      <section id="junctionControls" class="conditional hidden">
+        <h2>Junction</h2>
+        <div class="grid2">
+          <label>Center X (nm)<input id="junctionCenterNm" type="number" step="0.1" value="75"></label>
+          <label>Width (nm)<input id="junctionWidthNm" type="number" min="0.2" step="0.1" value="2"></label>
+          <label>GL suppression<input id="junctionSuppression" type="number" min="0" max="1" step="0.05" value="0.7"></label>
+        </div>
+        <p class="hint">The current spatial model is a resolved TDGL weak link. It is not a microscopic insulating barrier.</p>
+      </section>
+      <section id="feedbackControls" class="conditional hidden">
+        <h2>Laser feedback</h2>
+        <div class="grid2">
+          <label>Target X (nm)<input id="targetXNm" type="number" step="0.5" value="30"></label>
+          <label>Target Y (nm)<input id="targetYNm" type="number" step="0.5" value="0"></label>
+          <label>Follow X (nm)<input id="followXNm" type="number" step="0.5" value="17.5"></label>
+          <label>Follow Y (nm)<input id="followYNm" type="number" step="0.5" value="0"></label>
+          <label>Beam speed (m/s)<input id="beamSpeed" type="number" min="1" value="2000"></label>
+          <label>Target tolerance (nm)<input id="targetToleranceNm" type="number" min="0.01" value="0.5"></label>
+        </div>
+        <p class="hint">The first vortex in the object list is the feedback-controlled identity. Other vortices evolve freely.</p>
+      </section>
+      <section id="microwaveControls" class="conditional hidden">
+        <h2>Junction drive</h2>
+        <label class="check"><input id="microwaveEnabled" type="checkbox"> Enable sinusoidal contact current</label>
+        <div class="grid2">
+          <label>DC current (nA)<input id="driveDcNa" type="number" step="1" value="0"></label>
+          <label>AC amplitude (nA)<input id="driveAcNa" type="number" min="0" step="1" value="100"></label>
+          <label>Frequency (GHz)<input id="driveFrequencyGhz" type="number" min="0.001" value="50"></label>
+          <label>Phase (rad)<input id="drivePhase" type="number" step="0.1" value="0"></label>
+        </div>
+      </section>
+      <section>
+        <h2>Objects</h2>
+        <div id="objectList" class="object-list"></div>
+      </section>
+      <section>
+        <h2>Validation</h2>
+        <ul id="validation" class="validation"></ul>
+      </section>
+      <section>
+        <h2>Export</h2>
+        <button id="downloadGeometry">Geometry JSON</button>
+        <button id="downloadSimulation">Simulation JSON</button>
+        <button id="downloadDiagnostics">Experiment JSON</button>
+        <button id="downloadAll">Download runnable set</button>
+        <button id="downloadProject" class="secondary">Editor project JSON</button>
+        <p class="hint">Save geometry under <code>configs/geometry</code>, simulation under <code>configs/simulations</code>, and the experiment under <code>tools/config</code>. The status line shows the correct runner.</p>
+      </section>
+    </aside>
+  </main>
+  <script src="app.js"></script>
+</body>
+</html>

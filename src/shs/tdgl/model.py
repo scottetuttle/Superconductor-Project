@@ -4,16 +4,23 @@ TDGL physical model.
 Defines the normalized Time-Dependent Ginzburg-Landau
 physics used by SHS.
 
-The current dimensionless TDGL equation is:
+The supported dimensionless TDGL equation is:
 
-    u dpsi/dt =
+    u (d/dt + i phi) psi =
         D^2 psi
-        + (1 - T/Tc) psi
+        + epsilon(T) psi
         - |psi|^2 psi
 
 where:
 
     D = nabla - i A
+
+The default pyTDGL convention uses epsilon=clip(Tc/T-1, -1, 1),
+tau0=mu0*sigma*lambda^2, and its matched electromagnetic scales. The former
+1-T/Tc coefficient and microscopic relaxation time are available only through
+the explicit legacy_gl configuration. The scalar-potential term is optional. Generalized-gamma dynamics are handled
+by the time integrator; self-consistent vector-potential evolution is not yet
+implemented.
 
 The numerical solver is responsible for advancing
 the solution in time.
@@ -21,6 +28,11 @@ the solution in time.
 
 from dataclasses import dataclass
 import numpy as np
+from shs.utils.constants import (
+    REDUCED_PLANCK_CONSTANT,
+    BOLTZMANN_CONSTANT,
+    VACUUM_PERMEABILITY,
+)
 
 from .parameters import TDGLParameters
 
@@ -71,9 +83,19 @@ class TDGLModel:
             np.asarray(critical_temperature)
         )
 
-    @staticmethod
+    def temperature_coefficient(self, reduced_temperature):
+        """Return the configured dimensionless linear TDGL coefficient."""
+        reduced = np.asarray(reduced_temperature, dtype=float)
+        if self.parameters.temperature_model == "tc_over_t_minus_one":
+            with np.errstate(divide="ignore"):
+                coefficient = 1.0 / reduced - 1.0
+            coefficient = np.clip(coefficient, -1.0, 1.0)
+        else:
+            coefficient = 1.0 - reduced
+        return float(coefficient) if coefficient.ndim == 0 else coefficient
+
     def equilibrium_amplitude_squared(
-        reduced_temperature,
+        self, reduced_temperature,
     ):
         """
         Calculate equilibrium |psi|^2.
@@ -116,19 +138,15 @@ class TDGLModel:
             dtype=float
         )
 
-        result = np.maximum(
-            1.0 - t,
-            0.0
-        )
+        result = np.maximum(self.temperature_coefficient(t), 0.0)
 
         if result.ndim == 0:
             return float(result)
 
         return result
 
-    @staticmethod
     def equilibrium_amplitude(
-        reduced_temperature,
+        self, reduced_temperature,
     ):
         """
         Calculate equilibrium order-parameter amplitude.
@@ -151,7 +169,7 @@ class TDGLModel:
         """
 
         amplitude_squared = (
-            TDGLModel.equilibrium_amplitude_squared(
+            self.equilibrium_amplitude_squared(
                 reduced_temperature
             )
         )
@@ -205,6 +223,7 @@ class TDGLModel:
         vector_potential_y,
         dx,
         dy,
+        active_mask=None,
     ):
         """
         Calculate the dimensionless superconducting current density.
@@ -253,6 +272,7 @@ class TDGLModel:
             vector_potential_y,
             dx,
             dy,
+            active_mask,
         )
 
         jx = np.imag(
@@ -267,6 +287,8 @@ class TDGLModel:
     def characteristic_time(
         self,
         critical_temperature,
+        normal_conductivity=None,
+        penetration_depth=None,
     ):
         """
         Return the reference physical TDGL characteristic time.
@@ -275,8 +297,6 @@ class TDGLModel:
         time into the normalized TDGL time used by the solver.
         """
 
-        hbar = 1.054571817e-34
-        k_B = 1.380649e-23
 
         critical_temperature = float(
             critical_temperature
@@ -287,19 +307,24 @@ class TDGLModel:
                 "Critical temperature must be positive."
             )
 
-        return (
-            np.pi * hbar
-            /
-            (
-                8.0 *
-                k_B *
-                critical_temperature
-            )
+        if self.parameters.normalization == "pytdgl":
+            if normal_conductivity is None or penetration_depth is None:
+                raise ValueError(
+                    "pytdgl normalization requires normal conductivity and "
+                    "penetration depth."
+                )
+            if normal_conductivity <= 0 or penetration_depth <= 0:
+                raise ValueError("Conductivity and penetration depth must be positive.")
+            return VACUUM_PERMEABILITY * normal_conductivity * penetration_depth**2
+        return np.pi * REDUCED_PLANCK_CONSTANT / (
+            8.0 * BOLTZMANN_CONSTANT * critical_temperature
         )
     def dimensional_to_normalized_time(
         self,
         dt,
         critical_temperature,
+        normal_conductivity=None,
+        penetration_depth=None,
     ):
         """
         Convert a physical timestep into normalized TDGL time.
@@ -311,7 +336,9 @@ class TDGLModel:
             )
 
         tau_GL = self.characteristic_time(
-            critical_temperature
+            critical_temperature,
+            normal_conductivity,
+            penetration_depth,
         )
 
         return dt / tau_GL

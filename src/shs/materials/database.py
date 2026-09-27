@@ -53,5 +53,7 @@ def load_material(filepath: str | Path) -> Material:
     with open(filepath, "r") as file:
         data = json.load(file)
 
+    data.pop("_documentation", None)
+
     return Material(**data)
 

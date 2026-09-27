@@ -1,0 +1,27 @@
+{
+  "_documentation": {
+    "purpose": "Create an interpretable early-time nested-mesh reference: one centered vortex and one stationary laser on a 150 nm square film with 1 nm reference spacing.",
+    "relies_on": "configs/simulations/nbn_optical_vortex_large_unpinned.json supplies the enlarged geometry, NbN material, two-temperature model and uniform TDGL solver.",
+    "run_command": "python tools/prepare_nested_mesh_reference.py --config tools/config/nested_mesh_simple_reference.json",
+    "quick_command": "python tools/prepare_nested_mesh_reference.py --dark-steps 2 --exposure-steps 2",
+    "fields": {
+      "simulation_config": "Larger uniform-grid reference simulation; the adaptive production solver does not use it.",
+      "applied_field_T": "Uniform perpendicular applied magnetic field in tesla.",
+      "initial_vortex": "Centered +1 vortex seed; fractional coordinates correspond to 75.5 nm on the 150 nm film.",
+      "seed_position_m": "Physical reference used to locate the unique vortex.",
+      "laser.position_m": "Fixed beam center, 15 nm in +y from the initial vortex.",
+      "laser.absorbed_power_W": "Absorbed power in the superconducting film.",
+      "laser.spot_sigma_m": "Gaussian heating standard deviation.",
+      "timing.dark_steps": "Laser-off steps before illumination.",
+      "timing.exposure_steps": "Short illuminated evolution used to avoid edge and long-time transport complications.",
+      "output_directory": "Base result directory; numbered siblings preserve prior references."
+    }
+  },
+  "simulation_config": "configs/simulations/nbn_optical_vortex_large_unpinned.json",
+  "applied_field_T": 0.2,
+  "initial_vortex": {"x_fraction": 0.5033333333333333, "y_fraction": 0.5033333333333333, "charge": 1, "core_radius_cells": 2.0},
+  "seed_position_m": [7.55e-8, 7.55e-8],
+  "laser": {"position_m": [7.55e-8, 9.05e-8], "absorbed_power_W": 2.5e-7, "spot_sigma_m": 1.0e-8},
+  "timing": {"dark_steps": 20, "exposure_steps": 30},
+  "output_directory": "benchmark_results/nested_mesh_simple_reference"
+}

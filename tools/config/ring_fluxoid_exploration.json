@@ -1,0 +1,120 @@
+{
+  "_documentation": {
+    "purpose": "Runs the ring fluxoid exploration experiment or benchmark.",
+    "relies_on": "Uses configs/simulations/nbn_ring_exploration.json.",
+    "run_command": "python tools/tdgl_diagnostics.py --config tools/config/ring_fluxoid_exploration.json",
+    "authority": "Values in this file are authoritative for its runner. A sweep value overrides the corresponding base-simulation value only for that named case; effective values are recorded in summary.json.",
+    "fields": {
+      "simulation_config": "Base production simulation JSON built before this runner applies documented experiment controls.",
+      "run.sample_every": "Save diagnostics every this many accepted steps.",
+      "run.duration_multiplier": "Runs for this multiple of the referenced simulation duration; the simulation remains the sole owner of the physical duration and timestep.",
+      "sweeps.diagnostics.applied_Bz_T": "Sets applied Bz T; units are tesla.",
+      "sweeps.diagnostics.target_current_A": "Sets target current A; units are amperes.",
+      "magnetic_field.applied_Bz_T": "Sets applied Bz T; units are tesla.",
+      "magnetic_field.gauge": "Vector-potential gauge used to represent the applied magnetic field.",
+      "magnetic_field.calculate_self_field": "Enables or disables calculate self field.",
+      "magnetic_field.observation_height_m": "Sets observation height m; units are metres.",
+      "magnetic_field.source_stride": "Spatial subsampling for magnetic diagnostics; larger values are faster and less resolved.",
+      "validity.maximum_distance_from_Tc": "Upper limit for distance from Tc.",
+      "validity.maximum_thickness_over_xi": "Upper limit for thickness over xi.",
+      "validity.maximum_thickness_over_lambda": "Upper limit for thickness over lambda.",
+      "validity.maximum_spacing_over_xi": "Upper limit for spacing over xi.",
+      "initial_conditions.temperature_hotspot.enabled": "Enables this model or output feature.",
+      "initial_conditions.temperature_hotspot.peak_delta_K": "Sets peak delta K; units are kelvin.",
+      "initial_conditions.temperature_hotspot.radius_cells": "Configures radius cells.",
+      "initial_conditions.temperature_hotspot.x_fraction": "Dimensionless fraction controlling x.",
+      "initial_conditions.temperature_hotspot.y_fraction": "Dimensionless fraction controlling y.",
+      "initial_conditions.vortices[].charge": "Integer vortex winding: +1 is a vortex and -1 an antivortex.",
+      "initial_conditions.vortices[].core_radius_cells": "Initial vortex-core radius measured in mesh cells.",
+      "initial_conditions.vortices[].x_fraction": "Dimensionless fraction controlling x.",
+      "initial_conditions.vortices[].y_fraction": "Dimensionless fraction controlling y.",
+      "vortex_detection.amplitude_floor": "Minimum order-parameter amplitude at which phase winding is considered numerically reliable.",
+      "fluxoid.contour_inset_fraction": "Dimensionless fraction controlling contour inset.",
+      "output.directory": "Base output directory; runners reserve a numbered sibling if it already exists.",
+      "output.plots": "Enables or disables plots.",
+      "output.kymograph_centerline": "Chooses the horizontal or vertical line sampled through time.",
+      "output.dpi": "Raster resolution of generated figures.",
+      "output.vector_stride": "Grid subsampling for plotted current and field arrows.",
+      "output.gif.enabled": "Enables this model or output feature.",
+      "output.gif.fps": "Playback frames per second for generated GIFs."
+    }
+  },
+  "simulation_config": "configs/simulations/nbn_ring_exploration.json",
+  "run": {
+    "sample_every": 1,
+    "duration_multiplier": 2.0833333333333335
+  },
+  "sweeps": {
+    "diagnostics.applied_Bz_T": [
+      0.4
+    ],
+    "diagnostics.target_current_A": [
+      5e-09
+    ]
+  },
+  "magnetic_field": {
+    "applied_Bz_T": 1.0,
+    "gauge": "symmetric",
+    "calculate_self_field": true,
+    "observation_height_m": 5e-09,
+    "source_stride": 1
+  },
+  "validity": {
+    "maximum_distance_from_Tc": 0.2,
+    "maximum_thickness_over_xi": 1.0,
+    "maximum_thickness_over_lambda": 1.0,
+    "maximum_spacing_over_xi": 0.5
+  },
+  "initial_conditions": {
+    "temperature_hotspot": {
+      "enabled": true,
+      "peak_delta_K": 1,
+      "radius_cells": 5.0,
+      "x_fraction": 0.75,
+      "y_fraction": 0.5
+    },
+    "vortices": [
+      {
+        "x_fraction": 0.5,
+        "y_fraction": 0.85,
+        "charge": 1,
+        "core_radius_cells": 2.0
+      },
+      {
+        "x_fraction": 0.15,
+        "y_fraction": 0.5,
+        "charge": -1,
+        "core_radius_cells": 2.0
+      },
+      {
+        "x_fraction": 0.85,
+        "y_fraction": 0.5,
+        "charge": 1,
+        "core_radius_cells": 2.0
+      },
+      {
+        "x_fraction": 0.5,
+        "y_fraction": 0.15,
+        "charge": -1,
+        "core_radius_cells": 2.0
+      }
+    ]
+  },
+  "vortex_detection": {
+    "amplitude_floor": 1e-08
+  },
+  "fluxoid": {
+    "contour_inset_fraction": 0.2
+  },
+  "output": {
+    "directory": "benchmark_results/ring_fluxoid_exploration",
+    "plots": true,
+    "kymograph_centerline": "horizontal",
+    "dpi": 150,
+    "vector_stride": 5,
+    "gif": {
+      "enabled": true,
+      "fps": 4
+    }
+  }
+}

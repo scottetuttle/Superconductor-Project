@@ -1,0 +1,62 @@
+{
+  "_documentation": {
+    "purpose": "Long-running feedback experiment that tries to move one vortex 5 nm in +y using a laser held ahead of it. Thermal hysteresis switches illumination off and back on; checkpoints permit restart.",
+    "relies_on": "configs/simulations/nbn_optical_vortex_unpinned.json supplies the NbN film, mesh, two-temperature and TDGL solvers. This runner sets field, zero current, initial vortex, laser and optional pinning.",
+    "run_command": "python tools/optical_transport_overnight.py --config tools/config/optical_transport_overnight.json",
+    "resume_command": "python tools/optical_transport_overnight.py --config tools/config/optical_transport_overnight.json --resume benchmark_results/optical_transport_overnight",
+    "smoke_command": "python tools/optical_transport_overnight.py --dark-steps 2 --max-steps 5",
+    "fields": {
+      "simulation_config": "Base film, material and solver configuration.",
+      "applied_field_T": "Uniform perpendicular magnetic field in tesla.",
+      "initial_vortex": "Seeded single-vortex location and charge in fractional film coordinates.",
+      "seed_position_m": "Physical seed used to locate the prepared vortex.",
+      "target.displacement_m": "Desired displacement from the dark-prepared vortex center, [dx,dy] in metres.",
+      "target.tolerance_nm": "Distance from the target in nanometres that counts as arrival.",
+      "laser.absorbed_power_W": "Film-absorbed laser power while illumination is on; zero when switched off.",
+      "laser.spot_sigma_m": "Gaussian heating spot width in metres.",
+      "laser.offset_m": "Beam-center position relative to the last accepted vortex center while following it.",
+      "laser.max_speed_m_s": "Maximum beam translation speed in metres per second.",
+      "laser.update_every_steps": "Number of accepted steps between beam target updates.",
+      "pinning.enabled": "Enable or disable listed Gaussian pinning sites.",
+      "pinning.sites": "Defect position, width and dimensionless GL-coefficient suppression; these are not calibrated force values.",
+      "thermal_control.switch_off_K": "Turn laser off when the previous accepted peak electron temperature reaches this value.",
+      "thermal_control.restart_below_K": "Restart only after peak electron temperature cools below this lower value.",
+      "thermal_control.hard_stop_K": "Terminate if a physical step reaches this safety limit, below Tc.",
+      "thermal_control.minimum_dwell_steps": "Minimum accepted steps before reversing an on/off decision, to avoid rapid switching.",
+      "timing.dark_steps": "Laser-off preparation steps before the transport experiment.",
+      "timing.max_steps": "Maximum physical transport steps (dt comes from the base simulation).",
+      "timing.sample_every": "Steps between flushed diagnostics rows.",
+      "timing.checkpoint_every": "Steps between atomic state checkpoints and progress messages.",
+      "timing.stall_window_steps": "Length of a progress-monitoring window.",
+      "timing.stall_consecutive_windows": "Number of consecutive windows with insufficient progress before stop.",
+      "timing.minimum_progress_per_window_nm": "Smallest targetward progress considered useful in one window.",
+      "timing.max_wall_hours": "Upper wall-clock hours for one invocation; resume can continue later.",
+      "output_directory": "Base output folder; numbered siblings preserve previous runs."
+    }
+  },
+  "simulation_config": "configs/simulations/nbn_optical_vortex_unpinned.json",
+  "applied_field_T": 0.2,
+  "initial_vortex": {"x_fraction": 0.505, "y_fraction": 0.505, "charge": 1, "core_radius_cells": 2.0},
+  "seed_position_m": [5.05e-8, 5.05e-8],
+  "target": {"displacement_m": [0.0, 5.0e-9], "tolerance_nm": 0.25},
+  "laser": {
+    "absorbed_power_W": 2.5e-7,
+    "spot_sigma_m": 1.0e-8,
+    "offset_m": [0.0, 1.5e-8],
+    "max_speed_m_s": 300.0,
+    "update_every_steps": 5
+  },
+  "pinning": {"enabled": false, "sites": [{"position_m": [5.05e-8, 5.05e-8], "sigma_m": 2.5e-9, "strength": 0.025}]},
+  "thermal_control": {"switch_off_K": 15.0, "restart_below_K": 14.6, "hard_stop_K": 15.4, "minimum_dwell_steps": 10},
+  "timing": {
+    "dark_steps": 100,
+    "max_steps": 30000,
+    "sample_every": 10,
+    "checkpoint_every": 200,
+    "stall_window_steps": 1000,
+    "stall_consecutive_windows": 3,
+    "minimum_progress_per_window_nm": 0.05,
+    "max_wall_hours": 10
+  },
+  "output_directory": "benchmark_results/optical_transport_overnight"
+}

@@ -13,6 +13,8 @@ for evolving that state.
 
 from pathlib import Path
 
+import numpy as np
+
 from shs.config.simulation import load_simulation
 from shs.config.simulation_state import Simulation
 
@@ -43,7 +45,8 @@ from shs.tdgl.boundary import (
     TDGLBoundaryType,
 )
 
-from shs.tdgl.initialization import equilibrium_superconducting_state
+from shs.tdgl.model import TDGLModel
+from shs.tdgl.parameters import TDGLParameters
 
 
 def build_simulation(filepath):
@@ -120,7 +123,8 @@ def build_simulation(filepath):
 
     contact_map = build_contact_map(
         geometry,
-        mesh
+        mesh,
+        roundoff_ulps=config.numerics.contact_roundoff_ulps,
     )
 
     #
@@ -132,14 +136,22 @@ def build_simulation(filepath):
         material_map.Tc
     )
 
-    initial_psi = (
-        equilibrium_superconducting_state(
-            shape=(mesh.ny, mesh.nx),
-            reduced_temperature=float(
-                reduced_temperature[0, 0]
-            ),
-        )
+    initial_model = TDGLModel(TDGLParameters(
+        u=config.tdgl.u,
+        time_integrator=config.tdgl.time_integrator,
+        gamma=config.tdgl.gamma,
+        kappa=config.tdgl.kappa,
+        normalization=config.tdgl.normalization,
+        temperature_model=config.tdgl.temperature_model,
+        include_scalar_potential=config.tdgl.include_scalar_potential,
+        max_normalized_timestep=config.tdgl.max_normalized_timestep,
+        stability_safety_factor=config.tdgl.stability_safety_factor,
+    ))
+    initial_amplitude = initial_model.equilibrium_amplitude(
+        float(reduced_temperature[0, 0])
     )
+    initial_psi = np.full((mesh.ny, mesh.nx), initial_amplitude, dtype=complex)
+    initial_psi[~region_map.active_mask] = 0.0
 
     #
     # Simulation fields.

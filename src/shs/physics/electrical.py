@@ -8,6 +8,7 @@ between superconducting and normal current.
 from dataclasses import dataclass
 
 import numpy as np
+from shs.utils.defaults import default_section
 
 
 @dataclass
@@ -23,11 +24,12 @@ class ElectricalModel:
 
         J_n = sigma_n E
 
-    where the effective normal conductivity is reduced
-    by the superconducting fraction.
+    The standard generalized-TDGL model keeps the normal conductivity at its
+    measured normal-state value. A condensate-depletion interpolation remains
+    available as an explicitly selected legacy phenomenology.
     """
 
-    reference_voltage: float = 1.0
+    reference_voltage: float = default_section("electromagnetic")["reference_voltage"]
 
     def conductivity(self, resistivity):
         """
@@ -45,6 +47,7 @@ class ElectricalModel:
         self,
         resistivity,
         superconducting_fraction,
+        model="constant",
     ):
         """
         Calculate the effective normal conductivity.
@@ -56,15 +59,11 @@ class ElectricalModel:
             resistivity
         )
 
-        normal_fraction = np.maximum(
-            1.0 - superconducting_fraction,
-            0.0,
-        )
-
-        return (
-            normal_fraction *
-            conductivity
-        )
+        if model == "constant":
+            return np.broadcast_to(conductivity, np.shape(superconducting_fraction))
+        if model == "condensate_depletion":
+            return np.maximum(1.0 - superconducting_fraction, 0.0) * conductivity
+        raise ValueError("Unknown normal conductivity model.")
 
     def normal_current(
         self,
@@ -72,6 +71,7 @@ class ElectricalModel:
         electric_field_y,
         resistivity,
         superconducting_fraction,
+        model="constant",
     ):
         """
         Calculate the normal current contribution.
@@ -82,6 +82,7 @@ class ElectricalModel:
         conductivity = self.normal_conductivity(
             resistivity,
             superconducting_fraction,
+            model,
         )
 
         current_x = (

@@ -127,7 +127,7 @@ def test_local_temperature_suppresses_order_parameter():
     ] = hotspot_temperature
 
     model = TDGLModel(
-        TDGLParameters()
+        TDGLParameters(normalization="legacy_gl", temperature_model="one_minus_t_over_tc")
     )
 
     #
@@ -138,7 +138,7 @@ def test_local_temperature_suppresses_order_parameter():
 
         tdgl_step(
             simulation,
-            dt=0.001,
+            dt=0.001 * model.characteristic_time(simulation.material_map.materials[0].Tc),
             tdgl_model=model,
         )
 

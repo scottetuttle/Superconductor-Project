@@ -315,6 +315,7 @@ def covariant_laplacian(
     vector_potential_y,
     dx,
     dy,
+    active_mask=None,
 ):
     """
     Compute the gauge-consistent discrete covariant Laplacian.
@@ -402,6 +403,33 @@ def covariant_laplacian(
         dy
     )
 
+    if active_mask is not None:
+        active = np.asarray(active_mask, dtype=bool)
+        if active.shape != psi.shape:
+            raise ValueError("Active-domain mask must match psi.")
+        lap = np.zeros_like(psi, dtype=complex)
+        # Each active-active link contributes once to both endpoints. Omitting
+        # links at the mask boundary is the finite-volume zero-normal-current
+        # (covariant Neumann) condition for an insulating hole.
+        x_links = active[:, :-1] & active[:, 1:]
+        x_forward = (Ux[:, :-1] * psi[:, 1:] - psi[:, :-1]) / dx**2
+        lap[:, :-1] += np.where(x_links, x_forward, 0.0)
+        lap[:, 1:] += np.where(
+            x_links,
+            np.conjugate(Ux[:, :-1]) * psi[:, :-1] / dx**2 - psi[:, 1:] / dx**2,
+            0.0,
+        )
+        y_links = active[:-1, :] & active[1:, :]
+        y_forward = (Uy[:-1, :] * psi[1:, :] - psi[:-1, :]) / dy**2
+        lap[:-1, :] += np.where(y_links, y_forward, 0.0)
+        lap[1:, :] += np.where(
+            y_links,
+            np.conjugate(Uy[:-1, :]) * psi[:-1, :] / dy**2 - psi[1:, :] / dy**2,
+            0.0,
+        )
+        lap[~active] = 0.0
+        return lap
+
     lap = np.zeros_like(
         psi,
         dtype=complex,
@@ -457,7 +485,7 @@ def covariant_laplacian(
     # Right
     lap[:, -1] += (
         np.conjugate(
-            Ux[:, -1]
+            Ux[:, -2]
         ) * psi[:, -2]
         -
         psi[:, -1]
@@ -473,7 +501,7 @@ def covariant_laplacian(
     # Top
     lap[-1, :] += (
         np.conjugate(
-            Uy[-1, :]
+            Uy[-2, :]
         ) * psi[-2, :]
         -
         psi[-1, :]
@@ -523,6 +551,7 @@ def gauge_covariant_gradient(
     vector_potential_y,
     dx,
     dy,
+    active_mask=None,
 ):
     """
     Compute a gauge-covariant finite-difference gradient.
@@ -585,5 +614,14 @@ def gauge_covariant_gradient(
             -
             psi[:-1, :]
         ) / dy
+
+    if active_mask is not None:
+        active = np.asarray(active_mask, dtype=bool)
+        if active.shape != psi.shape:
+            raise ValueError("Active-domain mask must match psi.")
+        Dx[:, :-1] *= active[:, :-1] & active[:, 1:]
+        Dy[:-1, :] *= active[:-1, :] & active[1:, :]
+        Dx[~active] = 0.0
+        Dy[~active] = 0.0
 
     return Dx, Dy

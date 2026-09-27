@@ -4,7 +4,7 @@ import pytest
 from shs.tdgl.scaling import TDGLScales
 
 
-def create_scales():
+def create_scales(normalization="legacy_gl"):
     """
     Create representative NbN TDGL scales for testing.
     """
@@ -14,6 +14,7 @@ def create_scales():
         lambda_=2.0e-7,
         critical_temperature=15.5,
         time_scale=1.0e-12,
+        normalization=normalization,
     )
 
 
@@ -250,6 +251,26 @@ def test_current_density_scale():
     )
 
 
+def test_pytdgl_electromagnetic_scales_are_mutually_consistent():
+    scales = TDGLScales(
+        xi=5e-9,
+        lambda_=2e-7,
+        critical_temperature=15.5,
+        time_scale=4e-7 * np.pi * 1e6 * (2e-7) ** 2,
+        normalization="pytdgl",
+    )
+    sigma = 1.0e6
+    mu0 = 4e-7 * np.pi
+    expected_current = 4.0 * scales.xi * scales.magnetic_field_scale / (
+        mu0 * scales.lambda_**2
+    )
+
+    assert scales.current_density_scale == pytest.approx(expected_current)
+    assert scales.scalar_potential_scale / scales.xi == pytest.approx(
+        scales.current_density_scale / sigma
+    )
+
+
 def test_vector_potential_conversion_is_reversible():
 
     scales = create_scales()
@@ -334,6 +355,13 @@ def test_current_density_conversion_is_reversible():
     assert np.allclose(
         recovered,
         values,
+    )
+
+
+def test_pytdgl_covariant_supercurrent_uses_quarter_current_scale():
+    scales = create_scales(normalization="pytdgl")
+    assert scales.supercurrent_density_to_physical(1.0) == pytest.approx(
+        scales.current_density_scale / 4.0
     )
 
 

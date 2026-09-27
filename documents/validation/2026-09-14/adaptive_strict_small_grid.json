@@ -1,0 +1,80 @@
+[
+  {
+    "ordering": "tdgl_electrical_thermal",
+    "converged": true,
+    "total_iterations": 3,
+    "final_residual": 1.0700368783639698e-10,
+    "runtime_seconds": 0.010338799998862669,
+    "final_temperature_mean": 9.000000027885761,
+    "final_temperature_max": 9.000000070674949,
+    "final_psi_amplitude_mean": 0.9948178356367423,
+    "final_current_mean": 183777313.77908835,
+    "final_heat_mean": 5577152158256.6875,
+    "electrical_solver_iterations": 125
+  },
+  {
+    "ordering": "tdgl_thermal_electrical",
+    "converged": true,
+    "total_iterations": 3,
+    "final_residual": 1.0701810830253102e-10,
+    "runtime_seconds": 0.009104800003115088,
+    "final_temperature_mean": 9.000000027885761,
+    "final_temperature_max": 9.000000070674949,
+    "final_psi_amplitude_mean": 0.9948178356367423,
+    "final_current_mean": 183777313.77908835,
+    "final_heat_mean": 5577152158256.6875,
+    "electrical_solver_iterations": 125
+  },
+  {
+    "ordering": "electrical_tdgl_thermal",
+    "converged": true,
+    "total_iterations": 4,
+    "final_residual": 8.108699651160446e-10,
+    "runtime_seconds": 0.008948100003181025,
+    "final_temperature_mean": 9.000000027885761,
+    "final_temperature_max": 9.000000070674949,
+    "final_psi_amplitude_mean": 0.9948178356411993,
+    "final_current_mean": 183777313.30639124,
+    "final_heat_mean": 5577152148802.745,
+    "electrical_solver_iterations": 128
+  },
+  {
+    "ordering": "electrical_thermal_tdgl",
+    "converged": true,
+    "total_iterations": 4,
+    "final_residual": 8.108699584701511e-10,
+    "runtime_seconds": 0.008253300009528175,
+    "final_temperature_mean": 9.000000027885761,
+    "final_temperature_max": 9.000000070674949,
+    "final_psi_amplitude_mean": 0.9948178356367423,
+    "final_current_mean": 183777313.61669186,
+    "final_heat_mean": 5577152155008.758,
+    "electrical_solver_iterations": 128
+  },
+  {
+    "ordering": "thermal_tdgl_electrical",
+    "converged": true,
+    "total_iterations": 3,
+    "final_residual": 1.4857177506482626e-10,
+    "runtime_seconds": 0.007454600010532886,
+    "final_temperature_mean": 9.000000027885761,
+    "final_temperature_max": 9.000000070674949,
+    "final_psi_amplitude_mean": 0.9948178356367423,
+    "final_current_mean": 183777313.77908835,
+    "final_heat_mean": 5577152158256.6875,
+    "electrical_solver_iterations": 126
+  },
+  {
+    "ordering": "thermal_electrical_tdgl",
+    "converged": true,
+    "total_iterations": 4,
+    "final_residual": 1.0838852385592492e-09,
+    "runtime_seconds": 0.008238900001742877,
+    "final_temperature_mean": 9.0000000210053,
+    "final_temperature_max": 9.000000062934431,
+    "final_psi_amplitude_mean": 0.9948178356411993,
+    "final_current_mean": 183777313.40596387,
+    "final_heat_mean": 5577152150794.197,
+    "electrical_solver_iterations": 128
+  }
+]

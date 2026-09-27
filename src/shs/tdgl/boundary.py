@@ -22,6 +22,8 @@ class TDGLBoundaryType(Enum):
     """
 
     INSULATING = "insulating"
+    NORMAL_CONTACT = "normal_contact"
+    NORMAL_CONTACT_MASK = "normal_contact_mask"
 
 
 @dataclass
@@ -72,75 +74,62 @@ class TDGLBoundarySet:
         return iter(
             self.boundaries.values()
         )
-def apply_insulating_boundary(
-    psi,
-    vector_potential_x,
-    vector_potential_y,
-    dx,
-    dy,
-):
+def apply_insulating_boundary(psi, vector_potential_x, vector_potential_y,
+                              dx, dy, sides=None):
+    """Zero normal link derivative on selected insulating edges.
+
+    Link phases preserve amplitude under a pure gauge. At corners the y
+    boundary is applied last; for nonzero plaquette flux, both inward link
+    constraints cannot in general be imposed independently at one corner.
     """
-    Enforce the insulating TDGL boundary condition:
+    import numpy as np
+    sides = set(TDGLBoundarySide if sides is None else sides)
+    result = psi.copy()
+    ux = np.exp(-1j*vector_potential_x*dx)
+    uy = np.exp(-1j*vector_potential_y*dy)
+    if TDGLBoundarySide.LEFT in sides:
+        result[:, 0] = ux[:, 0]*result[:, 1]
+    if TDGLBoundarySide.RIGHT in sides:
+        result[:, -1] = np.conjugate(ux[:, -2])*result[:, -2]
+    if TDGLBoundarySide.BOTTOM in sides:
+        result[0] = uy[0]*result[1]
+    if TDGLBoundarySide.TOP in sides:
+        result[-1] = np.conjugate(uy[-2])*result[-2]
+    return result
 
-        n · D psi = 0
 
-    with
+def apply_normal_contact_boundary(psi, sides):
+    """Apply psi=0 on superconducting-to-normal terminal interfaces."""
+    result = psi.copy()
+    sides = set(sides)
+    if TDGLBoundarySide.LEFT in sides:
+        result[:, 0] = 0.0
+    if TDGLBoundarySide.RIGHT in sides:
+        result[:, -1] = 0.0
+    if TDGLBoundarySide.BOTTOM in sides:
+        result[0, :] = 0.0
+    if TDGLBoundarySide.TOP in sides:
+        result[-1, :] = 0.0
+    return result
 
-        D = nabla - i A.
+
+def apply_normal_contact_mask(psi, contact_mask):
+    """Impose ``psi = 0`` only on nodes belonging to a normal terminal.
+
+    The mask must describe nodes on the outer mesh boundary. Keeping this
+    operation separate from the insulating edge update lets a single device
+    edge contain both a normal contact segment and an insulating segment.
     """
+    import numpy as np
 
-    psi = psi.copy()
-
-    # Left boundary
-    #
-    # (psi[:, 1] - psi[:, 0]) / dx
-    #     - i Ax psi[:, 0] = 0
-
-    Ax = vector_potential_x[:, 0]
-
-    psi[:, 0] = (
-        psi[:, 1]
-        /
-        (1.0 + 1j * Ax * dx)
-    )
-
-    # Right boundary
-    #
-    # (psi[:, -1] - psi[:, -2]) / dx
-    #     - i Ax psi[:, -1] = 0
-
-    Ax = vector_potential_x[:, -1]
-
-    psi[:, -1] = (
-        psi[:, -2]
-        /
-        (1.0 - 1j * Ax * dx)
-    )
-
-    # Bottom boundary
-    #
-    # (psi[1, :] - psi[0, :]) / dy
-    #     - i Ay psi[0, :] = 0
-
-    Ay = vector_potential_y[0, :]
-
-    psi[0, :] = (
-        psi[1, :]
-        /
-        (1.0 + 1j * Ay * dy)
-    )
-
-    # Top boundary
-    #
-    # (psi[-1, :] - psi[-2, :]) / dy
-    #     - i Ay psi[-1, :] = 0
-
-    Ay = vector_potential_y[-1, :]
-
-    psi[-1, :] = (
-        psi[-2, :]
-        /
-        (1.0 - 1j * Ay * dy)
-    )
-
-    return psi
+    result = psi.copy()
+    mask = np.asarray(contact_mask, dtype=bool)
+    if mask.shape != result.shape:
+        raise ValueError("Normal-contact mask must match the order-parameter grid.")
+    boundary = np.zeros_like(mask)
+    boundary[[0, -1], :] = True
+    boundary[:, [0, -1]] = True
+    if np.any(mask & ~boundary):
+        raise ValueError("TDGL normal contacts must lie on the outer mesh boundary.")
+    result[mask] = 0.0
+    return result

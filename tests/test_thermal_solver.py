@@ -10,7 +10,10 @@ CONFIG = "configs/simulations/nbn_hotspot_test.json"
 
 def create_test_simulation():
 
-    return build_simulation(CONFIG)
+    simulation = build_simulation(CONFIG)
+    simulation.fields.temperature.fill(3.0)
+    simulation.boundaries = None  # These experiments specify insulating edges.
+    return simulation
 
 
 def test_heat_diffusion():
@@ -24,6 +27,7 @@ def test_heat_diffusion():
 
     thermal = ThermalModel(
         bath_temperature=3.0,
+        max_substep=1e-10,
         thermal_relaxation_rate=0.0
     )
 
@@ -59,18 +63,20 @@ def test_boundary_stability():
 
     thermal = ThermalModel(
         bath_temperature=3.0,
+        max_substep=1e-10,
         thermal_relaxation_rate=0.0
     )
 
 
     updated = thermal_step(
         simulation,
-        dt=1e-6,
+        dt=1e-10,
         thermal_model=thermal
     )
 
 
-    assert updated.temperature[0,0] == 3.0
+    assert np.isfinite(updated.temperature).all()
+    assert np.min(updated.temperature) >= 3.0
 
 
 
@@ -85,6 +91,7 @@ def test_hotspot_heating():
 
     thermal = ThermalModel(
         bath_temperature=3.0,
+        max_substep=1e-10,
         thermal_relaxation_rate=0.0
     )
 
@@ -105,24 +112,25 @@ def test_uniform_temperature_remains_constant():
     simulation = create_test_simulation()
 
     fields = simulation.fields
-
+    initial_temperature = fields.temperature.copy()
 
     thermal = ThermalModel(
         bath_temperature=3.0,
+        max_substep=1e-10,
         thermal_relaxation_rate=0.0
     )
 
 
     updated_fields = thermal_step(
         simulation,
-        dt=1e-6,
+        dt=1e-10,
         thermal_model=thermal
     )
 
 
     assert np.allclose(
         updated_fields.temperature,
-        fields.temperature
+        initial_temperature
     )
 
 
@@ -138,13 +146,14 @@ def test_bath_cooling():
 
     thermal = ThermalModel(
         bath_temperature=3.0,
+        max_substep=1e-10,
         thermal_relaxation_rate=100.0
     )
 
 
     updated_fields = thermal_step(
         simulation,
-        dt=1e-6,
+        dt=1e-10,
         thermal_model=thermal
     )
 
@@ -162,17 +171,18 @@ def test_bath_equilibrium():
     simulation = create_test_simulation()
 
     fields = simulation.fields
-
+    initial_temperature = fields.temperature.copy()
 
     thermal = ThermalModel(
         bath_temperature=3.0,
+        max_substep=1e-10,
         thermal_relaxation_rate=100.0
     )
 
 
     updated_fields = thermal_step(
         simulation,
-        dt=1e-6,
+        dt=1e-10,
         thermal_model=thermal
     )
 

@@ -39,7 +39,7 @@ class GaussianHotspot:
         X, Y = np.meshgrid(
             mesh.x,
             mesh.y,
-            indexing="ij"
+            indexing="xy"
         )
 
 

@@ -18,6 +18,11 @@ from enum import Enum
 
 import numpy as np
 
+from shs.utils.defaults import default_section
+
+
+_DEFAULTS = default_section("coupling")
+
 
 class ConvergenceStatus(Enum):
     """
@@ -64,14 +69,18 @@ class ConvergenceMonitor:
     The monitor does not modify the process being monitored.
     """
 
-    tolerance: float = 1e-8
-    prediction_window: int = 10
+    tolerance: float = _DEFAULTS["tolerance"]
+    prediction_window: int = _DEFAULTS["prediction_window"]
 
-    fast_ratio: float = 0.5
-    healthy_ratio: float = 0.95
-    stall_ratio: float = 0.999
+    fast_ratio: float = _DEFAULTS["fast_ratio"]
+    healthy_ratio: float = _DEFAULTS["healthy_ratio"]
+    stall_ratio: float = _DEFAULTS["stall_ratio"]
 
-    reasonable_iterations: int = 50
+    reasonable_iterations: int = _DEFAULTS["reasonable_iterations"]
+
+    minimum_iterations: int = _DEFAULTS["minimum_iterations"]
+
+    oscillation_window: int = _DEFAULTS["oscillation_window"]
 
     def __post_init__(self):
         self.validate()
@@ -83,6 +92,12 @@ class ConvergenceMonitor:
         """
         Validate convergence-monitor configuration.
         """
+
+        if not isinstance(self.minimum_iterations, int) or self.minimum_iterations < 1:
+            raise ValueError('Minimum iterations must be a positive integer.')
+
+        if not isinstance(self.oscillation_window, int) or self.oscillation_window < 4:
+            raise ValueError('Oscillation window must be an integer of at least 4.')
 
         if not np.isfinite(self.tolerance):
             raise ValueError(
@@ -365,11 +380,11 @@ class ConvergenceMonitor:
         Detect alternating increases and decreases in residual.
         """
 
-        if len(self.residuals) < 4:
+        if len(self.residuals) < self.oscillation_window:
             return False
 
         recent = np.asarray(
-            self.residuals[-4:],
+            self.residuals[-self.oscillation_window:],
             dtype=float,
         )
 
@@ -398,7 +413,7 @@ class ConvergenceMonitor:
 
         if (
             residual <= self.tolerance
-            and iteration >= 5
+            and iteration >= self.minimum_iterations
         ):
 
             return ConvergenceAssessment(
@@ -457,7 +472,7 @@ class ConvergenceMonitor:
         estimate = self.estimate_iterations_remaining()
 
         if estimate is not None:
-            estimate = max(5.0, estimate)
+            estimate = max(0.0, estimate)
 
         confidence = self.prediction_confidence()
 
@@ -497,8 +512,8 @@ class ConvergenceController:
     """
 
     monitor: ConvergenceMonitor
-    max_iterations: int = 1000
-    check_interval: int = 10
+    max_iterations: int = _DEFAULTS["max_iterations"]
+    check_interval: int = _DEFAULTS["check_interval"]
 
     def __post_init__(self):
         self.validate()

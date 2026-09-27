@@ -1,0 +1,97 @@
+{
+  "_documentation": {
+    "purpose": "Pull a left-bank vortex toward a central TDGL Josephson weak link while an unilluminated same-sign vortex evolves on the opposite bank. Optional AC current enables exploratory microwave/junction locking studies.",
+    "relies_on": "Uses configs/simulations/nbn_optical_junction.json and tools/optical_transport_overnight.py.",
+    "run_command": "python tools/optical_transport_overnight.py --config tools/config/optical_junction_vortex_transport.json",
+    "visualize_command": "python tools/visualize_optical_transport.py <printed-result-directory>",
+    "interpretation": "This is a spatial TDGL weak link, not a microscopic tunnel-insulator model. The AC option applies contact current and records junction voltage/phase; a quantitative Shapiro claim requires a bias sweep and comparison with the separate SIS RCSJ model.",
+    "fields": {
+      "simulation_config": "Resolved 150 nm by 100 nm two-temperature NbN film with a vertical weak link at x=75 nm.",
+      "applied_field_T": "Perpendicular background field. Reduce toward zero to isolate the two seeded vortices; increase to study field-driven entry.",
+      "initial_vortices": "All seeded TDGL vortices. The entry nearest seed_position_m is actively tracked; all others evolve freely with no direct laser controller.",
+      "initial_vortices[].charge": "Signed phase winding. Use +1 for mutually repelling vortices or -1 for an opposite-bank antivortex experiment.",
+      "initial_vortices[].x_fraction": "Initial x position as a fraction of film width.",
+      "initial_vortices[].y_fraction": "Initial y position as a fraction of film height.",
+      "initial_vortices[].core_radius_cells": "Numerical seeded-core radius in mesh cells.",
+      "seed_position_m": "Reference position selecting the left-bank vortex as the controlled identity.",
+      "target.displacement_m": "Desired motion of the tracked vortex. +30 nm in x brings it to about 7.5 nm from the weak-link center.",
+      "target.tolerance_nm": "Distance from the destination that stops the run successfully.",
+      "laser.absorbed_power_W": "Absorbed optical heating power while thermal hysteresis permits illumination.",
+      "laser.spot_sigma_m": "Gaussian beam standard deviation.",
+      "laser.offset_m": "Beam lead relative to the tracked vortex; positive x pulls it toward the junction.",
+      "laser.max_speed_m_s": "Maximum commanded beam speed.",
+      "laser.update_every_steps": "Accepted TDGL steps between feedback updates.",
+      "electrical_drive.enabled": "Enable left-to-right DC plus sinusoidal AC contact current. False isolates laser and vortex-junction dynamics.",
+      "electrical_drive.dc_current_A": "DC current bias used to scan the junction voltage response.",
+      "electrical_drive.ac_amplitude_A": "Microwave-frequency sinusoidal current amplitude.",
+      "electrical_drive.frequency_Hz": "Drive frequency; 50 GHz gives five cycles in a 100 ps, 10,000-step segment.",
+      "electrical_drive.phase_rad": "Initial AC phase.",
+      "tracking.require_unique_topology": "False permits the controlled vortex to be followed in the presence of the opposite-bank and field-entered vortices.",
+      "tracking.initial_search_radius_m": "Radius used once after dark preparation to reacquire the selected seed; it may be much larger than the per-step jump gate.",
+      "tracking.maximum_jump_m": "Largest accepted one-step movement before identity is considered unresolved.",
+      "thermal_control": "Peak-electron-temperature hysteresis keeps the complete film below the configured hard limit.",
+      "timing.dark_steps": "Laser-off preparation steps before feedback begins.",
+      "timing.max_steps": "Maximum transport steps. At 0.01 ps per step, 20,000 steps equals 200 ps.",
+      "timing.sample_every": "Diagnostic cadence; voltage and phase are recorded at this interval.",
+      "timing.checkpoint_every": "Crash-recovery checkpoint cadence.",
+      "output.field_snapshot_every": "Raw field-frame cadence for later GIFs and multivortex analysis.",
+      "live_preview": "Optional four-panel preview updated during the active run.",
+      "profiling.enabled": "Measure wall-time use by solver and output subsystems.",
+      "output_directory": "Unique result-directory base."
+    }
+  },
+  "simulation_config": "configs/simulations/nbn_optical_junction.json",
+  "applied_field_T": 0.51,
+  "initial_vortices": [
+    {"x_fraction": 0.25, "y_fraction": 0.5, "charge": 1, "core_radius_cells": 2.0},
+    {"x_fraction": 0.75, "y_fraction": 0.5, "charge": 1, "core_radius_cells": 2.0}
+  ],
+  "seed_position_m": [3.75e-08, 5e-08],
+  "target": {"displacement_m": [1.5e-08, 0.0], "tolerance_nm": 0.5},
+  "laser": {
+    "absorbed_power_W": 5e-07,
+    "spot_sigma_m": 1e-08,
+    "offset_m": [1.75e-08, 0.0],
+    "max_speed_m_s": 2000.0,
+    "update_every_steps": 1
+  },
+  "electrical_drive": {
+    "enabled": false,
+    "dc_current_A": 0.0,
+    "ac_amplitude_A": 1e-07,
+    "frequency_Hz": 5e10,
+    "phase_rad": 0.0
+  },
+  "pinning": {"enabled": false, "sites": []},
+  "tracking": {
+    "require_unique_topology": false,
+    "initial_search_radius_m": 3e-08,
+    "maximum_jump_m": 2e-09
+  },
+  "thermal_control": {
+    "sensor": "peak",
+    "switch_off_K": 15.0,
+    "restart_below_K": 14.5,
+    "hard_stop_K": 15.45,
+    "minimum_dwell_steps": 50
+  },
+  "timing": {
+    "dark_steps": 200,
+    "max_steps": 20000,
+    "sample_every": 10,
+    "checkpoint_every": 200,
+    "stall_window_steps": 1000,
+    "stall_consecutive_windows": 3,
+    "minimum_progress_per_window_nm": 0.05,
+    "max_wall_hours": 12
+  },
+  "output": {"field_snapshot_every": 50},
+  "live_preview": {
+    "enabled": true,
+    "every_steps": 200,
+    "history_frames": 30,
+    "page_refresh_seconds": 10
+  },
+  "profiling": {"enabled": true},
+  "output_directory": "benchmark_results/optical_junction_vortex_transport"
+}

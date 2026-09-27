@@ -3,6 +3,7 @@ from shs.boundaries import (
     BoundarySide,
     BoundaryType,
 )
+import json
 
 
 def test_load_boundary_json():
@@ -17,7 +18,9 @@ def test_load_boundary_json():
 
     assert left.type == BoundaryType.FIXED_TEMPERATURE
 
-    assert left.temperature == 4.2
+    with open("configs/simulations/nbn_hotspot_test.json", encoding="utf-8") as file:
+        expected = json.load(file)["boundaries"]["left"]["temperature"]
+    assert left.temperature == expected
 
 
 def test_insulating_boundary():

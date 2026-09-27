@@ -10,7 +10,8 @@ from .regions import Region
 from .geometry import (
     RectangularFilm,
     Geometry,
-    VoltageProbe
+    VoltageProbe,
+    Hole,
 )
 from .contacts import Contact
 
@@ -50,7 +51,9 @@ def load_geometry(filepath: str | Path):
         data["voltage_probes"] = [
             VoltageProbe(**probe)
             for probe in data["voltage_probes"]
-    ]
+        ]
+    if "holes" in data:
+        data["holes"] = [Hole(**hole) for hole in data["holes"]]
         
     geometry_type = data.pop("type")
 
@@ -64,14 +67,16 @@ def load_geometry(filepath: str | Path):
             nx=data["nx"],
             ny=data["ny"],
             regions=data.get("regions"),
-            contacts=data.get("contacts")
+            contacts=data.get("contacts"),
+            holes=data.get("holes"),
     )
 
         return Geometry(
             film=film,
             contacts=data.get("contacts", []),
             voltage_probes=data.get("voltage_probes", []),
-            regions=data.get("regions", [])
+            regions=data.get("regions", []),
+            holes=data.get("holes", []),
     )
 
 

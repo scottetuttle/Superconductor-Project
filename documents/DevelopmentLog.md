@@ -316,3 +316,23 @@ a physical validation test, or
 primarily a diagnostic test that should eventually be replaced or removed.
 
 Also begin identifying all hard-coded physical/control parameters in the solver stack and migrate them toward the configuration system where appropriate.
+## September 14, 2026 — Solver correction and baseline pass
+
+Established the original bounded baseline: 137 passed, 8 failed; fourteen tests
+were excluded after identifying impractical physical/normalized timestep and
+thermal-substep workloads. Full details and failure classification are in
+[SolverCorrections_2026-09-14.md](SolverCorrections_2026-09-14.md).
+
+Corrected fixed-point physical-time semantics, transactional acceptance and
+rollback, TDGL SI conversion, shared electrical coupling, source sign, electrical
+boundary and equation-residual handling, thermal boundary enforcement and
+conservative diffusion, timestep safeguards, source ownership, link boundary
+indices, configuration controls, and rectangular hotspot/contact mapping.
+Updated benchmark external-heating adapters and corrected stale/mis-specified
+tests. Added 22 focused regression cases.
+
+Final verification: `python -m pytest -q -p no:cacheprovider --tb=short`:
+**181 passed in 53.01 seconds**. The shipped NbN configuration also completed two
+1e-14-second steps in four total coupling iterations. Quantitative coupled power
+balance, general magnetic boundary validation, and experimental validation remain
+open; the correction report states the scope explicitly.

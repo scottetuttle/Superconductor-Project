@@ -29,6 +29,8 @@ def validate_simulation(simulation):
         raise ValueError(
             "RegionMap shape does not match mesh."
         )
+    if simulation.region_map.active_mask is None or simulation.region_map.active_mask.shape != mesh_shape:
+        raise ValueError("RegionMap active mask does not match mesh.")
 
     # ---------- Material Map ----------
 
@@ -78,6 +80,13 @@ def validate_simulation(simulation):
         simulation.fields.current_density_y,
 
         simulation.fields.heat_source,
+
+        simulation.fields.vector_potential_x,
+        simulation.fields.vector_potential_y,
+        simulation.fields.applied_vector_potential_x,
+        simulation.fields.applied_vector_potential_y,
+        simulation.fields.induced_vector_potential_x,
+        simulation.fields.induced_vector_potential_y,
     ]
 
     for array in field_arrays:

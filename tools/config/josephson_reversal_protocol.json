@@ -1,0 +1,52 @@
+{
+  "_documentation": {
+    "purpose": "Runs the josephson reversal protocol experiment or benchmark.",
+    "relies_on": "Uses configs/simulations/nbn_tdgl_weak_link.json.",
+    "run_command": "python tools/josephson_reversal_protocol.py --config tools/config/josephson_reversal_protocol.json",
+    "authority": "Values in this file are authoritative for its runner. A sweep value overrides the corresponding base-simulation value only for that named case; effective values are recorded in summary.json.",
+    "fields": {
+      "simulation_config": "Base production simulation JSON built before this runner applies documented experiment controls.",
+      "current_magnitudes_A": "Sets current magnitudes A; units are amperes.",
+      "dt_s": "Sets dt s; units are seconds.",
+      "zero_max_steps": "Configures zero max steps.",
+      "biased_max_steps": "Configures biased max steps.",
+      "applied_Bz_T": "Sets applied Bz T; units are tesla.",
+      "stability.minimum_stage_steps": "Lower limit for stage steps.",
+      "stability.window_steps": "Configures window steps.",
+      "stability.phase_step_tolerance_rad": "Numerical or physical acceptance tolerance for phase step rad.",
+      "stability.phase_rate_relative_tolerance": "Numerical or physical acceptance tolerance for phase rate relative.",
+      "stability.voltage_relative_tolerance": "Numerical or physical acceptance tolerance for voltage relative.",
+      "stability.amplitude_tolerance": "Numerical or physical acceptance tolerance for amplitude.",
+      "output.directory": "Base output directory; runners reserve a numbered sibling if it already exists.",
+      "output.sample_every": "Save diagnostics every this many accepted steps.",
+      "output.field_source_stride": "Configures field source stride.",
+      "output.gif_enabled": "Enables or disables gif enabled.",
+      "output.gif_fps": "Configures gif fps.",
+      "output.dpi": "Raster resolution of generated figures."
+    }
+  },
+  "simulation_config": "configs/simulations/nbn_tdgl_weak_link.json",
+  "current_magnitudes_A": [
+    1e-08
+  ],
+  "dt_s": 1e-14,
+  "zero_max_steps": 100,
+  "biased_max_steps": 250,
+  "applied_Bz_T": 0.0,
+  "stability": {
+    "minimum_stage_steps": 40,
+    "window_steps": 20,
+    "phase_step_tolerance_rad": 2e-06,
+    "phase_rate_relative_tolerance": 0.02,
+    "voltage_relative_tolerance": 0.002,
+    "amplitude_tolerance": 0.0002
+  },
+  "output": {
+    "directory": "benchmark_results/josephson_reversal_protocol",
+    "sample_every": 20,
+    "field_source_stride": 3,
+    "gif_enabled": true,
+    "gif_fps": 8,
+    "dpi": 120
+  }
+}

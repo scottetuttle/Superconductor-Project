@@ -71,6 +71,7 @@ from shs.numerics.convergence import (
     ConvergenceMonitor,
     ConvergenceStatus,
 )
+from shs.utils.output import reserve_output_directory
 
 
 CONFIG_PATH = Path(
@@ -440,40 +441,16 @@ def run_electrical(
     )
 
 
-def run_thermal(
-    simulation,
-    dt,
-    thermal_model,
-    external_heat=None,
-):
+def run_thermal(simulation, dt, thermal_model, external_heat=None):
+    # External and dissipative sources have separate ownership in Fields.
+    start = time.time()
+    fields = simulation.fields
     if external_heat is not None:
-
-        original_heat = (
-            simulation.fields.heat_source.copy()
-        )
-
-        simulation.fields.heat_source = (
-            original_heat
-            + external_heat
-        )
-
-        thermal_step(
-            simulation,
-            dt,
-            thermal_model,
-        )
-
-        simulation.fields.heat_source = (
-            original_heat
-        )
-
-    else:
-
-        thermal_step(
-            simulation,
-            dt,
-            thermal_model,
-        )
+        fields.external_heat_source = np.asarray(external_heat).copy()
+        fields.heat_source = fields.external_heat_source + (
+            0 if fields.joule_heat_source is None else fields.joule_heat_source)
+    thermal_step(simulation, dt, thermal_model)
+    return time.time() - start
 
 
 def execute_ordering(
@@ -3762,13 +3739,13 @@ def main():
                     f"{result['runtime_seconds']:.3f} s"
                 )
 
-    output_directory = Path(
+    output_directory = reserve_output_directory(Path(
         config[
             "output"
         ][
             "directory"
         ]
-    )
+    ))
 
     save_results(
         results=results,

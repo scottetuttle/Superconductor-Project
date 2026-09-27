@@ -1,0 +1,149 @@
+{
+  "_documentation": {
+    "purpose": "Runs the reduced optical tweezers experiment or benchmark.",
+    "relies_on": "Uses only the physics values in this file.",
+    "run_command": "python tools/reduced_vortex_diagnostics.py --config tools/config/reduced_optical_tweezers.json",
+    "authority": "Values in this file are authoritative for its runner. A sweep value overrides the corresponding base-simulation value only for that named case; effective values are recorded in summary.json.",
+    "fields": {
+      "physics_backend": "Configures physics backend.",
+      "domain.width_m": "Sets width m; units are metres.",
+      "domain.height_m": "Sets height m; units are metres.",
+      "bath_temperature_K": "Sets bath temperature K; units are kelvin.",
+      "material.critical_temperature_K": "Sets critical temperature K; units are kelvin.",
+      "material.coherence_length_m": "Sets coherence length m; units are metres.",
+      "material.penetration_depth_m": "Sets penetration depth m; units are metres.",
+      "material.normal_resistivity_ohm_m": "Sets normal resistivity ohm m; units are metres.",
+      "laser.sigma_m": "Sets sigma m; units are metres.",
+      "laser.thermal_response_time_s": "Sets thermal response time s; units are seconds.",
+      "laser.protocol[].delta_temperature_K": "Sets delta temperature K; units are kelvin.",
+      "laser.protocol[].time_s": "Sets time s; units are seconds.",
+      "laser.protocol[].x_m": "Sets x m; units are metres.",
+      "laser.protocol[].y_m": "Sets y m; units are metres.",
+      "pinning_sites[].energy_per_length_J_per_m": "Sets energy per length J per m; units are metres.",
+      "pinning_sites[].sigma_m": "Sets sigma m; units are metres.",
+      "pinning_sites[].x_m": "Sets x m; units are metres.",
+      "pinning_sites[].y_m": "Sets y m; units are metres.",
+      "initial_vortices[].charge": "Integer vortex winding: +1 is a vortex and -1 an antivortex.",
+      "initial_vortices[].x_m": "Sets x m; units are metres.",
+      "initial_vortices[].y_m": "Sets y m; units are metres.",
+      "current_density_A_per_m2": "Sets current density A per m2; units are amperes per square metre.",
+      "run.duration_s": "Sets duration s; units are seconds.",
+      "run.dt_s": "Sets dt s; units are seconds.",
+      "run.sample_every": "Save diagnostics every this many accepted steps.",
+      "run.maximum_displacement_per_step_m": "Sets maximum displacement per step m; units are metres.",
+      "evaluation.transport_interval_s": "Sets transport interval s; units are seconds.",
+      "evaluation.maximum_following_lag_m": "Sets maximum following lag m; units are metres.",
+      "evaluation.destination_m": "Sets destination m; units are metres.",
+      "evaluation.delivery_radius_m": "Sets delivery radius m; units are metres.",
+      "output.directory": "Base output directory; runners reserve a numbered sibling if it already exists.",
+      "output.dpi": "Raster resolution of generated figures."
+    }
+  },
+  "physics_backend": "reduced_vortex",
+  "domain": {
+    "width_m": 3e-05,
+    "height_m": 3e-05
+  },
+  "bath_temperature_K": 4.6,
+  "material": {
+    "critical_temperature_K": 8.6,
+    "coherence_length_m": 4e-08,
+    "penetration_depth_m": 9e-08,
+    "normal_resistivity_ohm_m": 1.5e-08
+  },
+  "laser": {
+    "sigma_m": 5e-07,
+    "thermal_response_time_s": 1e-09,
+    "protocol": [
+      {
+        "time_s": 0.0,
+        "x_m": 8e-06,
+        "y_m": 1.5e-05,
+        "delta_temperature_K": 0.0
+      },
+      {
+        "time_s": 1e-08,
+        "x_m": 8e-06,
+        "y_m": 1.5e-05,
+        "delta_temperature_K": 3.0
+      },
+      {
+        "time_s": 3e-08,
+        "x_m": 8e-06,
+        "y_m": 1.5e-05,
+        "delta_temperature_K": 3.0
+      },
+      {
+        "time_s": 1.403e-05,
+        "x_m": 2.2e-05,
+        "y_m": 1.5e-05,
+        "delta_temperature_K": 3.0
+      },
+      {
+        "time_s": 1.603e-05,
+        "x_m": 2.2e-05,
+        "y_m": 1.5e-05,
+        "delta_temperature_K": 3.0
+      },
+      {
+        "time_s": 1.703e-05,
+        "x_m": 2.2e-05,
+        "y_m": 1.5e-05,
+        "delta_temperature_K": 0.0
+      },
+      {
+        "time_s": 1.903e-05,
+        "x_m": 2.2e-05,
+        "y_m": 1.5e-05,
+        "delta_temperature_K": 0.0
+      }
+    ]
+  },
+  "pinning_sites": [
+    {
+      "x_m": 8e-06,
+      "y_m": 1.5e-05,
+      "energy_per_length_J_per_m": 5e-13,
+      "sigma_m": 8e-08
+    },
+    {
+      "x_m": 2.2e-05,
+      "y_m": 1.5e-05,
+      "energy_per_length_J_per_m": 5e-13,
+      "sigma_m": 8e-08
+    }
+  ],
+  "initial_vortices": [
+    {
+      "x_m": 8e-06,
+      "y_m": 1.5e-05,
+      "charge": 1
+    }
+  ],
+  "current_density_A_per_m2": [
+    0.0,
+    0.0
+  ],
+  "run": {
+    "duration_s": 1.903e-05,
+    "dt_s": 1e-10,
+    "sample_every": 100,
+    "maximum_displacement_per_step_m": 5e-08
+  },
+  "evaluation": {
+    "transport_interval_s": [
+      3e-08,
+      1.403e-05
+    ],
+    "maximum_following_lag_m": 5e-07,
+    "destination_m": [
+      2.2e-05,
+      1.5e-05
+    ],
+    "delivery_radius_m": 8e-08
+  },
+  "output": {
+    "directory": "benchmark_results/reduced_optical_tweezers",
+    "dpi": 160
+  }
+}

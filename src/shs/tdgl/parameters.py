@@ -6,7 +6,7 @@ Time-Dependent Ginzburg-Landau model.
 
 The current TDGL formulation is dimensionless and uses:
 
-    u dpsi/dt =
+    u (d/dt + i phi) psi =
         D^2 psi
         + (1 - T/Tc) psi
         - |psi|^2 psi
@@ -24,6 +24,11 @@ at zero temperature in the absence of fields.
 
 from dataclasses import dataclass
 
+from shs.utils.defaults import default_section
+
+
+_DEFAULTS = default_section("tdgl")
+
 
 @dataclass
 class TDGLParameters:
@@ -36,9 +41,8 @@ class TDGLParameters:
         TDGL relaxation parameter.
 
     gamma:
-        Optional amplitude/phase coupling parameter.
-        The current normalized implementation does not
-        yet use this parameter dynamically.
+        Kramer-Watts-Tobin amplitude/phase coupling parameter. Zero recovers
+        the simpler relaxational TDGL equation.
 
     kappa:
         Ginzburg-Landau parameter:
@@ -59,15 +63,24 @@ class TDGLParameters:
         automatically divided into internal substeps.
     """
 
-    u: float = 5.79
+    u: float = _DEFAULTS["u"]
+    time_integrator: str = _DEFAULTS["time_integrator"]
 
-    gamma: float = 0.0
+    gamma: float = _DEFAULTS["gamma"]
 
-    kappa: float = 1.0
+    kappa: float = _DEFAULTS["kappa"]
+
+    normalization: str = _DEFAULTS["normalization"]
+
+    temperature_model: str = _DEFAULTS["temperature_model"]
+
+    include_scalar_potential: bool = _DEFAULTS["include_scalar_potential"]
 
     reduced_temperature: float = 0.0
 
-    max_normalized_timestep: float = 0.1
+    max_normalized_timestep: float = _DEFAULTS["max_normalized_timestep"]
+
+    stability_safety_factor: float = _DEFAULTS["stability_safety_factor"]
 
     def validate(self):
         """
@@ -79,6 +92,8 @@ class TDGLParameters:
             If a parameter is physically or numerically invalid.
         """
 
+        if self.time_integrator not in {"euler", "heun"}:
+            raise ValueError("TDGL time_integrator must be euler or heun.")
         if self.u <= 0.0:
             raise ValueError(
                 "TDGL relaxation parameter u must be positive."
@@ -89,9 +104,23 @@ class TDGLParameters:
                 "Ginzburg-Landau parameter kappa must be positive."
             )
 
+        if self.normalization not in {"pytdgl", "legacy_gl"}:
+            raise ValueError("TDGL normalization must be pytdgl or legacy_gl.")
+
+        if self.temperature_model not in {
+            "tc_over_t_minus_one", "one_minus_t_over_tc"
+        }:
+            raise ValueError("Unknown TDGL temperature coefficient model.")
+
         if self.max_normalized_timestep <= 0.0:
             raise ValueError(
                 "Maximum normalized TDGL timestep must be positive."
             )
+
+        if not isinstance(self.include_scalar_potential, bool):
+            raise ValueError("include_scalar_potential must be boolean.")
+
+        if not 0.0 < self.stability_safety_factor <= 1.0:
+            raise ValueError("TDGL stability_safety_factor must lie in (0, 1].")
 
         return True

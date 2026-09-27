@@ -1,0 +1,58 @@
+{
+  "_documentation": {
+    "purpose": "Defines the reusable geometr named 'NbN_junction_film'.",
+    "relies_on": "Loaded by a simulation or experiment configuration; packaged defaults fill only omitted optional simulation controls.",
+    "run_command": "Not run directly; reference this filename from a simulation or tool configuration.",
+    "authority": "Values in this file are authoritative for its runner. A sweep value overrides the corresponding base-simulation value only for that named case; effective values are recorded in summary.json.",
+    "fields": {
+      "type": "Selects the geometry, boundary, contact, or model type.",
+      "name": "Human-readable identifier.",
+      "width": "Physical width in metres.",
+      "height": "Physical height in metres.",
+      "thickness": "Film thickness in metres.",
+      "nx": "Number of mesh nodes along x.",
+      "ny": "Number of mesh nodes along y.",
+      "regions[].material": "Material JSON filename or material-property object.",
+      "regions[].name": "Human-readable identifier.",
+      "regions[].region_type": "Behavior assigned to this geometric region.",
+      "contacts[].contact_type": "Electrical boundary condition applied at this contact.",
+      "contacts[].name": "Human-readable identifier.",
+      "contacts[].x": "Configures x.",
+      "contacts[].x_size": "Configures x size.",
+      "contacts[].y": "Configures y.",
+      "contacts[].y_size": "Configures y size."
+    }
+  },
+  "type": "rectangle",
+  "name": "NbN_junction_film",
+  "width": 1e-07,
+  "height": 5e-08,
+  "thickness": 2e-09,
+  "nx": 201,
+  "ny": 101,
+  "regions": [
+    {
+      "name": "NbN junction film",
+      "region_type": "superconductor",
+      "material": "NbN_tdgl_reference"
+    }
+  ],
+  "contacts": [
+    {
+      "name": "left_current",
+      "contact_type": "current",
+      "x": 0.0,
+      "y": 0.0,
+      "x_size": 0.0,
+      "y_size": 5e-08
+    },
+    {
+      "name": "right_current",
+      "contact_type": "current",
+      "x": 1e-07,
+      "y": 0.0,
+      "x_size": 0.0,
+      "y_size": 5e-08
+    }
+  ]
+}

@@ -1,0 +1,47 @@
+{
+  "_documentation": {
+    "purpose": "Isolate whether a stationary, displaced optical hotspot creates a directed thermal drive and measurable single-vortex response.",
+    "relies_on": "Builds configs/simulations/nbn_optical_vortex_unpinned.json; that simulation selects the NbN material, 100 nm film, two-temperature heat solver, and TDGL integrator. A pinned comparison can use nbn_optical_vortex_two_temperature.json.",
+    "run_command": "python tools/optical_gradient_probe.py --config tools/config/optical_gradient_probe.json",
+    "authority": "Values here set the experiment. The referenced simulation supplies material, geometry, solver tolerances, and timestep; this runner explicitly controls the field, seed, laser, and zero applied current.",
+    "fields": {
+      "simulation_config": "Base simulation file to build, including material and numerical settings.",
+      "applied_field_T": "Uniform perpendicular magnetic field in tesla.",
+      "initial_vortex.x_fraction": "Initial vortex x as a fraction of film width; between-node seeding prevents ambiguous plaquette winding.",
+      "initial_vortex.y_fraction": "Initial vortex y as a fraction of film height.",
+      "initial_vortex.charge": "Topological sign of the seeded vortex; +1 here.",
+      "initial_vortex.core_radius_cells": "Initial core radius in mesh cells.",
+      "seed_position_m": "Physical location of the seeded vortex in metres; used for core tracking and beam offset.",
+      "beam_offset_m": "Vector from vortex to the positive stationary beam in metres; the negative control reverses it.",
+      "absorbed_power_W": "Power absorbed by the film, not incident optical power, in watts.",
+      "spot_sigma_m": "Gaussian optical spot standard deviation in metres.",
+      "minimum_directional_response_nm": "Smallest dark-subtracted core shift toward both mirrored beams required to flag directional response; in nanometres.",
+      "timing.dark_steps": "Coupled steps with laser off before cloning the same prepared state into all three controls.",
+      "timing.exposure_steps": "Coupled steps for each dark, positive-offset, and negative-offset branch.",
+      "timing.sample_every": "Number of steps between spatial-gradient and vortex-core diagnostics.",
+      "output.dpi": "Resolution of diagnostic images.",
+      "output_directory": "Base result directory; a numbered sibling is reserved if it already exists."
+    }
+  },
+  "simulation_config": "configs/simulations/nbn_optical_vortex_unpinned.json",
+  "applied_field_T": 0.2,
+  "initial_vortex": {
+    "x_fraction": 0.505,
+    "y_fraction": 0.505,
+    "charge": 1,
+    "core_radius_cells": 2.0
+  },
+  "seed_position_m": [5.05e-8, 5.05e-8],
+  "beam_offset_m": [0.0, 3e-8],
+  "absorbed_power_W": 5e-7,
+  "spot_sigma_m": 1e-8,
+  "timing": {
+    "dark_steps": 100,
+    "exposure_steps": 250,
+    "sample_every": 5
+  },
+  "output": {"dpi": 150},
+  "output_directory": "benchmark_results/optical_gradient_probe",
+
+  "minimum_directional_response_nm": 0.1
+}

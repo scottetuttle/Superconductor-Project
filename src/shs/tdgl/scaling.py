@@ -20,11 +20,11 @@ The electromagnetic normalization follows the standard GL scales:
 
     B0 = Phi0 / (2 pi xi^2)
 
-    J0 = Phi0 / (2 pi mu0 lambda^2 xi)
+    J0 = 4 xi Bc2 / (mu0 lambda^2)
 
-The time scale is intentionally supplied explicitly rather than
-being inferred here. The exact TDGL time normalization depends on
-the microscopic/phenomenological TDGL convention being adopted.
+For the default pyTDGL convention the caller supplies
+tau0=mu0*sigma*lambda^2. The legacy convention remains selectable for old
+comparison cases.
 
 This separation is intentional:
 
@@ -41,6 +41,7 @@ This separation is intentional:
 from dataclasses import dataclass
 
 import numpy as np
+from shs.utils.constants import SUPERCONDUCTING_FLUX_QUANTUM, VACUUM_PERMEABILITY
 
 
 @dataclass(frozen=True)
@@ -77,7 +78,9 @@ class TDGLScales:
     critical_temperature: float
     time_scale: float
 
-    flux_quantum: float = 2.067833848e-15
+    normalization: str = "legacy_gl"
+
+    flux_quantum: float = SUPERCONDUCTING_FLUX_QUANTUM
 
     def __post_init__(self):
         """
@@ -108,6 +111,8 @@ class TDGLScales:
             raise ValueError(
                 "Flux quantum must be positive."
             )
+        if self.normalization not in {"pytdgl", "legacy_gl"}:
+            raise ValueError("Unknown TDGL normalization.")
 
     # ------------------------------------------------------------------
     # Characteristic electromagnetic scales
@@ -148,31 +153,29 @@ class TDGLScales:
                 self.xi**2
             )
         )
-
     @property
     def current_density_scale(self):
         """
         Characteristic GL current-density scale.
 
-        J0 = Phi0 /
-             (2 pi mu0 lambda^2 xi)
+        pyTDGL: J0 = 4 xi Bc2 / (mu0 lambda^2)
+        legacy: J0 = Phi0 / (2 pi mu0 lambda^2 xi)
 
         Units:
             A/m^2
         """
 
-        mu0 = 4.0e-7 * np.pi
-
-        return (
+        base = (
             self.flux_quantum /
             (
                 2.0 *
                 np.pi *
-                mu0 *
+                VACUUM_PERMEABILITY *
                 self.lambda_**2 *
                 self.xi
             )
         )
+        return 4.0 * base if self.normalization == "pytdgl" else base
 
     @property
     def electric_field_scale(self):
@@ -185,10 +188,16 @@ class TDGLScales:
             V/m
         """
 
-        return (
-            self.vector_potential_scale /
-            self.time_scale
-        )
+        return self.scalar_potential_scale / self.xi
+
+    @property
+    def scalar_potential_scale(self):
+        """Characteristic electric scalar-potential scale [V].
+
+        phi0 = xi E0 = Phi0 / (2 pi t0)
+        """
+        base = self.flux_quantum / (2.0 * np.pi * self.time_scale)
+        return 4.0 * base if self.normalization == "pytdgl" else base
 
     # ------------------------------------------------------------------
     # Length
@@ -374,6 +383,16 @@ class TDGLScales:
             self.current_density_scale
         )
 
+    def supercurrent_density_to_physical(self, covariant_current):
+        """Convert ``Im(psi* D psi)`` to physical supercurrent density.
+
+        In the pyTDGL units, ``J0`` contains a factor of four relative to the
+        GL covariant-current scale. The legacy convention uses the base scale
+        directly.
+        """
+        factor = 0.25 if self.normalization == "pytdgl" else 1.0
+        return np.asarray(covariant_current) * self.current_density_scale * factor
+
     # ------------------------------------------------------------------
     # Electric field
     # ------------------------------------------------------------------
@@ -404,3 +423,11 @@ class TDGLScales:
             np.asarray(dimensionless_electric_field) *
             self.electric_field_scale
         )
+
+    def scalar_potential_to_dimensionless(self, scalar_potential):
+        """Convert physical electric potential [V] to TDGL units."""
+        return np.asarray(scalar_potential) / self.scalar_potential_scale
+
+    def scalar_potential_to_physical(self, dimensionless_potential):
+        """Convert dimensionless TDGL scalar potential to volts."""
+        return np.asarray(dimensionless_potential) * self.scalar_potential_scale

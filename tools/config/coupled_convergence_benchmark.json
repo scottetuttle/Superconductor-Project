@@ -1,131 +1,168 @@
 {
-    "simulation_config": "configs/simulations/nbn_hotspot_test.json",
-
-    "physical_steps": 100,
-
-    "dt_values": [
-        1e-12
-    ],
-
-    "sigma_values": [
-        1.0
-    ],
-
-    "order_mode": "one",
-
-    "single_ordering": "electrical_tdgl_thermal",
-
-    "convergence": {
-        "tolerance": 1e-3,
-
-        "max_iterations": 50,
-
-        "check_interval": 10,
-
-        "prediction_window": 10,
-
-        "reasonable_iterations": 50
-    },
-
-    "adaptive_relaxation": {
-        "enabled": true,
-
-        "minimum_sigma": 0.25,
-
-        "reduction_factor": 0.8,
-
-        "required_reversals": 2
-    },
-
-    "adaptive_controller": {
-        "enabled": true,
-
-        "component_prediction": {
-            "minimum_confidence": 0.5,
-
-            "reasonable_iterations": 20,
-
-            "stall_ratio": 0.999,
-
-            "divergence_ratio": 1.0
-        },
-
-        "adaptation": {
-            "electrical_tolerance_factor": 0.5,
-
-            "tdgl_max_normalized_timestep_factor": 0.50,
-
-            "thermal_max_substep_factor": 0.5,
-
-            "physical_dt_factor": 0.50
-        },
-
-        "bounds": {
-            "electrical_tolerance_min": 1e-15,
-
-            "electrical_tolerance_max": 1e-5,
-
-            "tdgl_max_normalized_timestep_min": 1e-3,
-
-            "tdgl_max_normalized_timestep_max": 1,
-
-            "thermal_max_substep_min": 1e-16,
-
-            "thermal_max_substep_max": 1e-9,
-
-            "physical_dt_min": 1e-18
-        },
-
-        "retry": {
-            "max_restarts_per_timestep": 10,
-
-            "max_total_restarts": 100
-        },
-
-        "behavior": {
-            "adapt_one_component": true,
-
-            "adapt_two_components": true,
-
-            "reduce_dt_when_all_components_problematic": true,
-
-            "reduce_sigma_only_for_oscillation": true,
-
-            "retain_successful_parameters": true
-        }
-    },
-
-    "initial_conditions": {
-        "uniform_psi_one": true,
-
-        "initial_tdgl_max_normalized_timestep": 0.1
-    },
-
-    "thermal": {
-        "bath_temperature": 9.0,
-
-        "thermal_relaxation_rate": 1e5
-    },
-
-    "electrical": {
-        "voltage_left": 0.1,
-
-        "voltage_right": 0.0
-    },
-
-    "external_heat": {
-        "enabled": true,
-
-        "amplitude": 1e16,
-
-        "radius_cells": 20.0
-    },
-
-    "output": {
-        "directory": "benchmark_results/coupled_convergence/test5",
-
-        "save_history": true,
-
-        "make_plots": true
+  "_documentation": {
+    "purpose": "Runs the coupled convergence benchmark experiment or benchmark.",
+    "relies_on": "Uses configs/simulations/nbn_hotspot_test.json.",
+    "run_command": "python tools/benchmark_adaptive_coupled_updated.py --config tools/config/coupled_convergence_benchmark.json",
+    "authority": "Values in this file are authoritative for its runner. A sweep value overrides the corresponding base-simulation value only for that named case; effective values are recorded in summary.json.",
+    "fields": {
+      "simulation_config": "Base production simulation JSON built before this runner applies documented experiment controls.",
+      "physical_steps": "Configures physical steps.",
+      "dt_values": "Configures dt values.",
+      "sigma_values": "Configures sigma values.",
+      "order_mode": "Configures order mode.",
+      "single_ordering": "Configures single ordering.",
+      "convergence.tolerance": "Numerical or physical acceptance tolerance for tolerance.",
+      "convergence.max_iterations": "Upper limit for iterations.",
+      "convergence.check_interval": "Iterations between convergence-controller decisions.",
+      "convergence.prediction_window": "Recent residual values used to estimate convergence behavior.",
+      "convergence.reasonable_iterations": "Iteration count treated as acceptable when scoring a benchmark.",
+      "adaptive_relaxation.enabled": "Enables this model or output feature.",
+      "adaptive_relaxation.method": "Configures method.",
+      "adaptive_relaxation.minimum_sigma": "Lower limit for sigma.",
+      "adaptive_relaxation.maximum_sigma": "Upper limit for sigma.",
+      "adaptive_relaxation.reduction_factor": "Configures reduction factor.",
+      "adaptive_relaxation.required_reversals": "Configures required reversals.",
+      "adaptive_controller.enabled": "Enables this model or output feature.",
+      "adaptive_controller.component_prediction.minimum_confidence": "Lower limit for confidence.",
+      "adaptive_controller.component_prediction.reasonable_iterations": "Iteration count treated as acceptable when scoring a benchmark.",
+      "adaptive_controller.component_prediction.stall_ratio": "Residual-reduction ratio above which progress is stalled.",
+      "adaptive_controller.component_prediction.divergence_ratio": "Configures divergence ratio.",
+      "adaptive_controller.adaptation.electrical_tolerance_factor": "Numerical or physical acceptance tolerance for electrical factor.",
+      "adaptive_controller.adaptation.tdgl_max_normalized_timestep_factor": "Configures tdgl max normalized timestep factor.",
+      "adaptive_controller.adaptation.thermal_max_substep_factor": "Configures thermal max substep factor.",
+      "adaptive_controller.adaptation.physical_dt_factor": "Configures physical dt factor.",
+      "adaptive_controller.bounds.electrical_tolerance_min": "Numerical or physical acceptance tolerance for electrical min.",
+      "adaptive_controller.bounds.electrical_tolerance_max": "Numerical or physical acceptance tolerance for electrical max.",
+      "adaptive_controller.bounds.tdgl_max_normalized_timestep_min": "Configures tdgl max normalized timestep min.",
+      "adaptive_controller.bounds.tdgl_max_normalized_timestep_max": "Configures tdgl max normalized timestep max.",
+      "adaptive_controller.bounds.thermal_max_substep_min": "Configures thermal max substep min.",
+      "adaptive_controller.bounds.thermal_max_substep_max": "Configures thermal max substep max.",
+      "adaptive_controller.bounds.physical_dt_min": "Configures physical dt min.",
+      "adaptive_controller.retry.max_restarts_per_timestep": "Upper limit for restarts per timestep.",
+      "adaptive_controller.retry.max_total_restarts": "Upper limit for total restarts.",
+      "adaptive_controller.adaptation_effectiveness.minimum_residual_improvement": "Lower limit for residual improvement.",
+      "adaptive_controller.adaptation_effectiveness.minimum_iteration_improvement": "Lower limit for iteration improvement.",
+      "adaptive_controller.behavior.adapt_one_component": "Enables or disables adapt one component.",
+      "adaptive_controller.behavior.adapt_two_components": "Enables or disables adapt two components.",
+      "adaptive_controller.behavior.reduce_dt_when_all_components_problematic": "Enables or disables reduce dt when all components problematic.",
+      "adaptive_controller.behavior.reduce_sigma_only_for_oscillation": "Enables or disables reduce sigma only for oscillation.",
+      "adaptive_controller.behavior.retain_successful_parameters": "Enables or disables retain successful parameters.",
+      "initial_conditions.uniform_psi_one": "Enables or disables uniform psi one.",
+      "initial_conditions.initial_tdgl_max_normalized_timestep": "Configures initial tdgl max normalized timestep.",
+      "thermal.bath_temperature": "Thermal-reservoir temperature toward which the film relaxes.",
+      "thermal.thermal_relaxation_rate": "Linear heat-removal coefficient coupling the film to its bath.",
+      "electrical.voltage_left": "Potential imposed at the left transport boundary.",
+      "electrical.voltage_right": "Potential imposed at the right transport boundary.",
+      "electrical.inner_tolerance_policy": "Numerical or physical acceptance tolerance for inner policy.",
+      "electrical.inner_tolerance_factor": "Numerical or physical acceptance tolerance for inner factor.",
+      "external_heat.enabled": "Enables this model or output feature.",
+      "external_heat.amplitude": "Configures amplitude.",
+      "external_heat.radius_meters": "Configures radius meters.",
+      "output.directory": "Base output directory; runners reserve a numbered sibling if it already exists.",
+      "output.save_history": "Enables or disables save history.",
+      "output.make_plots": "Enables or disables make plots.",
+      "output.plot_dpi": "Configures plot dpi.",
+      "output.progress_updates": "Configures progress updates.",
+      "numerical_safeguards.residual_floor": "Configures residual floor.",
+      "numerical_safeguards.parameter_change_relative_tolerance": "Numerical or physical acceptance tolerance for parameter change relative.",
+      "numerical_safeguards.time_absolute_floor": "Configures time absolute floor.",
+      "numerical_safeguards.time_relative_floor": "Configures time relative floor."
     }
+  },
+  "simulation_config": "configs/simulations/nbn_hotspot_test.json",
+  "physical_steps": 100,
+  "dt_values": [
+    1e-10
+  ],
+  "sigma_values": [
+    1.0
+  ],
+  "order_mode": "one",
+  "single_ordering": "electrical_tdgl_thermal",
+  "convergence": {
+    "tolerance": 0.01,
+    "max_iterations": 100,
+    "check_interval": 10,
+    "prediction_window": 10,
+    "reasonable_iterations": 50
+  },
+  "adaptive_relaxation": {
+    "enabled": true,
+    "method": "aitken",
+    "minimum_sigma": 0.25,
+    "maximum_sigma": 1.0,
+    "reduction_factor": 0.8,
+    "required_reversals": 2
+  },
+  "adaptive_controller": {
+    "enabled": true,
+    "component_prediction": {
+      "minimum_confidence": 0.5,
+      "reasonable_iterations": 20,
+      "stall_ratio": 0.999,
+      "divergence_ratio": 1.0
+    },
+    "adaptation": {
+      "electrical_tolerance_factor": 0.5,
+      "tdgl_max_normalized_timestep_factor": 0.5,
+      "thermal_max_substep_factor": 0.5,
+      "physical_dt_factor": 0.5
+    },
+    "bounds": {
+      "electrical_tolerance_min": 1e-15,
+      "electrical_tolerance_max": 1e-05,
+      "tdgl_max_normalized_timestep_min": 0.001,
+      "tdgl_max_normalized_timestep_max": 1,
+      "thermal_max_substep_min": 1e-16,
+      "thermal_max_substep_max": 1e-09,
+      "physical_dt_min": 1e-18
+    },
+    "retry": {
+      "max_restarts_per_timestep": 10,
+      "max_total_restarts": 100
+    },
+    "adaptation_effectiveness": {
+      "minimum_residual_improvement": 0.1,
+      "minimum_iteration_improvement": 0.1
+    },
+    "behavior": {
+      "adapt_one_component": true,
+      "adapt_two_components": true,
+      "reduce_dt_when_all_components_problematic": true,
+      "reduce_sigma_only_for_oscillation": true,
+      "retain_successful_parameters": true
+    }
+  },
+  "initial_conditions": {
+    "uniform_psi_one": true,
+    "initial_tdgl_max_normalized_timestep": 0.1
+  },
+  "thermal": {
+    "bath_temperature": 9.0,
+    "thermal_relaxation_rate": 100000.0
+  },
+  "electrical": {
+    "voltage_left": 0.001,
+    "voltage_right": 0.0,
+    "inner_tolerance_policy": "coupling_scaled",
+    "inner_tolerance_factor": 0.01
+  },
+  "external_heat": {
+    "enabled": true,
+    "amplitude": 10000000000000.0,
+    "radius_meters": 1e-08
+  },
+  "output": {
+    "directory": "benchmark_results/coupled_convergence/test5",
+    "save_history": true,
+    "make_plots": true,
+    "plot_dpi": 150,
+    "progress_updates": 100
+  },
+  "numerical_safeguards": {
+    "residual_floor": 1e-14,
+    "parameter_change_relative_tolerance": 1e-14,
+    "time_absolute_floor": 1e-30,
+    "time_relative_floor": 1e-15
+  }
 }

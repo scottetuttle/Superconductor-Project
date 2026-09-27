@@ -1,0 +1,145 @@
+{
+  "_documentation": {
+    "purpose": "Runs the sis vortex shapiro experiment or benchmark.",
+    "relies_on": "Uses only the physics values in this file.",
+    "run_command": "python tools/sis_vortex_microwave_diagnostics.py --config tools/config/sis_vortex_shapiro.json",
+    "authority": "Values in this file are authoritative for its runner. A sweep value overrides the corresponding base-simulation value only for that named case; effective values are recorded in summary.json.",
+    "fields": {
+      "temperature_K": "Sets temperature K; units are kelvin.",
+      "critical_temperature_K": "Sets critical temperature K; units are kelvin.",
+      "junction.critical_current_A": "Zero-field SIS critical current; null requests Ambegaokar-Baratoff calculation.",
+      "junction.normal_resistance_ohm": "Normal/shunt resistance of the SIS junction.",
+      "junction.capacitance_F": "Junction capacitance.",
+      "junction.magnetic_flux_quanta": "Configures magnetic flux quanta.",
+      "extended_junction.width_m": "Sets width m; units are metres.",
+      "extended_junction.electrode_length_m": "Sets electrode length m; units are metres.",
+      "extended_junction.junction_x_m": "Sets junction x m; units are metres.",
+      "extended_junction.effective_magnetic_length_m": "Sets effective magnetic length m; units are metres.",
+      "extended_junction.magnetic_field_T": "Sets magnetic field T; units are tesla.",
+      "extended_junction.samples": "Configures samples.",
+      "extended_junction.vortices": "Configures vortices.",
+      "vortex_scenarios[].name": "Human-readable identifier.",
+      "vortex_scenarios[].vortices": "Configures vortices.",
+      "vortex_scenarios[].vortices[].charge": "Integer vortex winding: +1 is a vortex and -1 an antivortex.",
+      "vortex_scenarios[].vortices[].electrode": "Junction electrode in which the vortex is seeded.",
+      "vortex_scenarios[].vortices[].x_m": "Sets x m; units are metres.",
+      "vortex_scenarios[].vortices[].y_m": "Sets y m; units are metres.",
+      "drive.mode": "Configures mode.",
+      "drive.dc": "Configures dc.",
+      "drive.ac_amplitude": "Configures ac amplitude.",
+      "drive.frequency_Hz": "Microwave drive frequency.",
+      "microwave_amplitudes_A": "Delivered AC-current amplitudes included in the sweep.",
+      "sweep_dc_values": "DC drive values included in the sweep.",
+      "initial_phase_rad": "Initial junction phase difference in radians.",
+      "run.duration_s": "Sets duration s; units are seconds.",
+      "run.samples": "Configures samples.",
+      "run.max_step_s": "Sets max step s; units are seconds.",
+      "run.microwave_steps_per_cycle": "Integration samples per microwave period; more samples improve resolution at greater cost.",
+      "run.rtol": "Relative numerical tolerance.",
+      "run.atol": "Absolute numerical tolerance in the associated quantity's units.",
+      "output.gif_enabled": "Enables or disables gif enabled.",
+      "output.gif_microwave_amplitude_A": "Sets gif microwave amplitude A; units are amperes.",
+      "output.gif_bias_current_A": "Sets gif bias current A; units are amperes.",
+      "output.gif_fps": "Configures gif fps.",
+      "output_directory": "Base output directory; runners reserve a numbered sibling if it already exists."
+    }
+  },
+  "temperature_K": 4.2,
+  "critical_temperature_K": 9.2,
+  "junction": {
+    "critical_current_A": 2e-06,
+    "normal_resistance_ohm": 20.0,
+    "capacitance_F": 2e-13,
+    "magnetic_flux_quanta": 0.0
+  },
+  "extended_junction": {
+    "width_m": 2e-06,
+    "electrode_length_m": 2e-06,
+    "junction_x_m": 0.0,
+    "effective_magnetic_length_m": 2e-07,
+    "magnetic_field_T": 0.0,
+    "samples": 501,
+    "vortices": []
+  },
+  "vortex_scenarios": [
+    {
+      "name": "no_vortex",
+      "vortices": []
+    },
+    {
+      "name": "left_plus_vortex",
+      "vortices": [
+        {
+          "x_m": -2e-07,
+          "y_m": 2e-07,
+          "charge": 1,
+          "electrode": "left"
+        }
+      ]
+    },
+    {
+      "name": "opposite_vortex_pair",
+      "vortices": [
+        {
+          "x_m": -2e-07,
+          "y_m": 2e-07,
+          "charge": 1,
+          "electrode": "left"
+        },
+        {
+          "x_m": 2e-07,
+          "y_m": -2e-07,
+          "charge": -1,
+          "electrode": "right"
+        }
+      ]
+    }
+  ],
+  "drive": {
+    "mode": "current",
+    "dc": 0.0,
+    "ac_amplitude": 1.4e-06,
+    "frequency_Hz": 5000000000.0
+  },
+  "microwave_amplitudes_A": [
+    0.0,
+    7e-07,
+    1.4e-06,
+    2.1e-06
+  ],
+  "sweep_dc_values": [
+    -4e-06,
+    -3.5e-06,
+    -3e-06,
+    -2.5e-06,
+    -2e-06,
+    -1.5e-06,
+    -1e-06,
+    -5e-07,
+    0,
+    5e-07,
+    1e-06,
+    1.5e-06,
+    2e-06,
+    2.5e-06,
+    3e-06,
+    3.5e-06,
+    4e-06
+  ],
+  "initial_phase_rad": 0.0,
+  "run": {
+    "duration_s": 8e-09,
+    "samples": 2400,
+    "max_step_s": 2e-12,
+    "microwave_steps_per_cycle": 100,
+    "rtol": 1e-07,
+    "atol": 1e-10
+  },
+  "output": {
+    "gif_enabled": true,
+    "gif_microwave_amplitude_A": 1.4e-06,
+    "gif_bias_current_A": 2e-06,
+    "gif_fps": 12
+  },
+  "output_directory": "benchmark_results/sis_vortex_shapiro_sweep"
+}

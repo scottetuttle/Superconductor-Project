@@ -270,9 +270,10 @@ def test_electrical_conductivity_is_suppressed_by_superconductivity():
     Jx, Jy = electrical_model.normal_current(
         simulation.fields.electric_field_x,
         simulation.fields.electric_field_y,
-        simulation.material_map.normal_resistivity,
-        np.abs(simulation.fields.psi) ** 2,
-    )
+            simulation.material_map.normal_resistivity,
+            np.abs(simulation.fields.psi) ** 2,
+            model="condensate_depletion",
+        )
 
     expected_fraction = 1.0 - 0.25
 
@@ -317,6 +318,7 @@ def test_electrical_solver_separates_supercurrent_and_normal_current():
         superconducting_fraction=(
             np.abs(simulation.fields.psi) ** 2
         ),
+        solver_tolerance=1e-8,
     )
 
     assert np.allclose(
@@ -353,6 +355,7 @@ def test_electrical_solver_joule_heating_uses_normal_current():
         superconducting_fraction=(
             np.abs(simulation.fields.psi) ** 2
         ),
+        solver_tolerance=1e-8,
     )
 
     expected_heat = (

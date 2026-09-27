@@ -1,4 +1,5 @@
 from shs.config.simulation import load_simulation
+import json
 
 
 def test_simulation_loads_boundaries():
@@ -21,7 +22,7 @@ def test_boundary_temperature():
         "configs/simulations/nbn_hotspot_test.json"
     )
 
-    assert (
-        simulation.boundaries["left"]["temperature"]
-        == 4.2
-    )
+    with open("configs/simulations/nbn_hotspot_test.json", encoding="utf-8") as file:
+        expected = json.load(file)["boundaries"]["left"]["temperature"]
+
+    assert simulation.boundaries["left"]["temperature"] == expected

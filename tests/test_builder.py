@@ -47,7 +47,7 @@ def test_builder_boundary():
         BoundarySide.LEFT
     )
 
-    assert left.temperature == 4.2
+    assert left.temperature == simulation.config.boundaries["left"]["temperature"]
 
 def test_builder_fields():
 
@@ -55,7 +55,7 @@ def test_builder_fields():
         "configs/simulations/nbn_hotspot_test.json"
     )
 
-    assert simulation.fields.temperature[0, 0] == 3.0
+    assert simulation.fields.temperature[0, 0] == simulation.config.temperature
 
     assert simulation.fields.temperature.shape == (
         simulation.mesh.ny,

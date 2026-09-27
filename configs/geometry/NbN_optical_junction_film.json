@@ -1,0 +1,47 @@
+{
+  "_documentation": {
+    "purpose": "A 150 nm by 100 nm NbN film for laser-driven vortex motion toward a central vertical Josephson weak link.",
+    "relies_on": "Referenced by configs/simulations/nbn_optical_junction.json.",
+    "run_command": "Not run directly; use the optical-junction experiment configuration.",
+    "fields": {
+      "width": "Film length across the junction in metres.",
+      "height": "Film width parallel to the junction in metres.",
+      "thickness": "Superconducting-film thickness in metres.",
+      "nx": "Mesh nodes across x; 151 gives 1 nm spacing.",
+      "ny": "Mesh nodes across y; 101 gives 1 nm spacing.",
+      "contacts": "Full-height current contacts on the left and right edges."
+    }
+  },
+  "type": "rectangle",
+  "name": "NbN optical Josephson film",
+  "width": 1.5e-07,
+  "height": 1e-07,
+  "thickness": 2e-09,
+  "nx": 151,
+  "ny": 101,
+  "regions": [
+    {
+      "name": "NbN junction film",
+      "region_type": "superconductor",
+      "material": "NbN_tdgl_reference"
+    }
+  ],
+  "contacts": [
+    {
+      "name": "left_current",
+      "contact_type": "current",
+      "x": 0.0,
+      "y": 0.0,
+      "x_size": 0.0,
+      "y_size": 1e-07
+    },
+    {
+      "name": "right_current",
+      "contact_type": "current",
+      "x": 1.5e-07,
+      "y": 0.0,
+      "x_size": 0.0,
+      "y_size": 1e-07
+    }
+  ]
+}

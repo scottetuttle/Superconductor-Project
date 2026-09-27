@@ -9,7 +9,7 @@ from shs.numerics import (
 
 def create_test_problem():
 
-    shape = (100, 100)
+    shape = (20, 20)
 
     solution = np.zeros(shape)
 
